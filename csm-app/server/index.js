@@ -89,6 +89,38 @@ app.put('/api/contracts/:id', checkEditor, (req, res) => {
 });
 
 // --- Atividades (Activities) API ---
+app.post('/api/bot/log', (req, res) => {
+    // Rota dedicada para as automações (ex: Google Chat Bot)
+    const {
+        cliente_id, responsavel_atendimento, tipo_entrega,
+        status_entrega, engajamento, temperatura, alerta_risco, observacoes, bot_auth_token
+    } = req.body;
+
+    // Segurança básica: Token estático partilhado entre o Apps Script e o Render
+    const SECRET_BOT_TOKEN = "csm_bot_secure_123";
+    if (bot_auth_token !== SECRET_BOT_TOKEN) {
+        return res.status(403).json({ error: "Acesso não autorizado pelo Bot." });
+    }
+
+    const data = new Date().toISOString();
+
+    const sql = `INSERT INTO activities (
+        data, contract_id, responsavel_atendimento, tipo_entrega, 
+        status_entrega, engajamento, temperatura, alerta_risco, observacoes
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    db.run(sql, [
+        data, cliente_id, responsavel_atendimento, tipo_entrega,
+        status_entrega, engajamento, temperatura, alerta_risco, observacoes
+    ], function (err) {
+        if (err) {
+            console.error("Bot API DB Error:", err);
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(201).json({ success: true, id: this.lastID });
+    });
+});
+
 app.get('/api/activities', (req, res) => {
     const query = `
         SELECT a.*, c.cliente 
