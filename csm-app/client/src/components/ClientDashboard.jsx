@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { User, AlertCircle, CheckCircle2 } from 'lucide-react';
-
-const API_URL = 'http://localhost:3001/api';
+import API_URL from '../config';
 
 const SERVICOS_MAP = {
     'Workshop': { target: 'workshop_target', realized: 'workshop_realizado' },
