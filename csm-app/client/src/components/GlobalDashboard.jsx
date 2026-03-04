@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { TrendingUp, AlertTriangle, CheckCircle2, Users, Info } from 'lucide-react';
+import { TrendingUp, AlertTriangle, CheckCircle2, Users, Info, BarChart3, Activity, Clock, Star } from 'lucide-react';
 import API_URL from '../config';
 
 const SERVICOS_MAP = {
