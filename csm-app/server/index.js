@@ -91,18 +91,22 @@ app.put('/api/contracts/:id', checkEditor, (req, res) => {
 // --- Atividades (Activities) API ---
 app.post('/api/bot/log', (req, res) => {
     // Rota dedicada para as automações (ex: Google Chat Bot)
+    console.log("Recebendo log do Bot:", req.body);
+
     const {
         cliente_id, responsavel_atendimento, tipo_entrega,
-        status_entrega, engajamento, temperatura, alerta_risco, observacoes, bot_auth_token
+        status_entrega, engajamento, temperatura, alerta_risco, observacoes, bot_auth_token, data_manual
     } = req.body;
 
-    // Segurança básica: Token estático partilhado entre o Apps Script e o Render
+    // Segurança básica
     const SECRET_BOT_TOKEN = "csm_bot_secure_123";
     if (bot_auth_token !== SECRET_BOT_TOKEN) {
+        console.warn("Token do Bot inválido.");
         return res.status(403).json({ error: "Acesso não autorizado pelo Bot." });
     }
 
-    const data = new Date().toISOString();
+    // Se o bot enviar data_manual (AAAA-MM-DD), usamos, senão usamos Agora
+    const data = data_manual ? new Date(data_manual).toISOString() : new Date().toISOString();
 
     const sql = `INSERT INTO activities (
         data, contract_id, responsavel_atendimento, tipo_entrega, 
@@ -114,9 +118,10 @@ app.post('/api/bot/log', (req, res) => {
         status_entrega, engajamento, temperatura, alerta_risco, observacoes
     ], function (err) {
         if (err) {
-            console.error("Bot API DB Error:", err);
+            console.error("Erro ao inserir na DB via Bot:", err.message);
             return res.status(500).json({ error: err.message });
         }
+        console.log("Atividade inserida com sucesso via Bot. ID:", this.lastID);
         res.status(201).json({ success: true, id: this.lastID });
     });
 });
