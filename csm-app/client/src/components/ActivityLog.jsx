@@ -83,7 +83,7 @@ export default function ActivityLog() {
         <div>
             <div className="page-header">
                 <h2>Log de Atividades</h2>
-                <p>Registo de interações e entregas de equipa</p>
+                <p>Registro de interações e entregas de equipe</p>
             </div>
 
             {isEditor ? (

@@ -108,7 +108,7 @@ export default function Dashboard() {
         <div>
             <div className="page-header">
                 <h2>Painel de Controle</h2>
-                <p>Monitorização em tempo real do Contratado vs. Realizado</p>
+                <p>Monitoramento em tempo real do Contratado vs. Realizado</p>
             </div>
 
             <div className="dash-grid" style={{ marginBottom: '32px' }}>

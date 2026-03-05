@@ -10,7 +10,7 @@ import ActivityLog from './components/ActivityLog';
 import ClientDashboard from './components/ClientDashboard';
 import Login from './components/Login';
 
-// Axios Interceptor para enviar o papel do utilizador
+// Axios Interceptor para enviar o papel do usuário
 axios.interceptors.request.use(config => {
   const user = JSON.parse(localStorage.getItem('csm_user'));
   if (user && user.role) {
