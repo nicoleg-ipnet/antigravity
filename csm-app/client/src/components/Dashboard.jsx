@@ -107,7 +107,7 @@ export default function Dashboard() {
     return (
         <div>
             <div className="page-header">
-                <h2>Painel de Controlo</h2>
+                <h2>Painel de Controle</h2>
                 <p>Monitorização em tempo real do Contratado vs. Realizado</p>
             </div>
 

@@ -55,7 +55,7 @@ function AppContent() {
 
             <NavLink to="/panel" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <LayoutDashboard size={20} />
-              Painel de Controlo
+              Painel de Controle
             </NavLink>
 
             <NavLink to="/contracts" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
