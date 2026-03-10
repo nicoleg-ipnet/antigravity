@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./database');
+const { processFreshserviceWebhook } = require('./freshservice');
 
 const app = express();
 app.use(cors());
@@ -42,17 +43,20 @@ app.get('/api/contracts', (req, res) => {
 app.post('/api/contracts', checkEditor, (req, res) => {
     const {
         cliente, responsavel_cs, workshop_target, assessment_target,
-        treinamento_target, maps_report_target, suporte_target, proposta_tecnica_target
+        treinamento_target, maps_report_target, suporte_target, proposta_tecnica_target,
+        freshservice_dept
     } = req.body;
 
     const sql = `INSERT INTO contracts (
         cliente, responsavel_cs, workshop_target, assessment_target, 
-        treinamento_target, maps_report_target, suporte_target, proposta_tecnica_target
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+        treinamento_target, maps_report_target, suporte_target, proposta_tecnica_target,
+        freshservice_dept
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     db.run(sql, [
         cliente, responsavel_cs, workshop_target || 0, assessment_target || 0,
-        treinamento_target || 0, maps_report_target || 0, suporte_target || 0, proposta_tecnica_target || 0
+        treinamento_target || 0, maps_report_target || 0, suporte_target || 0, proposta_tecnica_target || 0,
+        freshservice_dept
     ], function (err) {
         if (err) {
             return res.status(500).json({ error: err.message });
@@ -65,17 +69,20 @@ app.put('/api/contracts/:id', checkEditor, (req, res) => {
     const { id } = req.params;
     const {
         cliente, responsavel_cs, workshop_target, assessment_target,
-        treinamento_target, maps_report_target, suporte_target, proposta_tecnica_target
+        treinamento_target, maps_report_target, suporte_target, proposta_tecnica_target,
+        freshservice_dept
     } = req.body;
 
     const sql = `UPDATE contracts SET 
         cliente = ?, responsavel_cs = ?, workshop_target = ?, assessment_target = ?, 
-        treinamento_target = ?, maps_report_target = ?, suporte_target = ?, proposta_tecnica_target = ?
+        treinamento_target = ?, maps_report_target = ?, suporte_target = ?, proposta_tecnica_target = ?,
+        freshservice_dept = ?
         WHERE id = ?`;
 
     db.run(sql, [
         cliente, responsavel_cs, workshop_target || 0, assessment_target || 0,
         treinamento_target || 0, maps_report_target || 0, suporte_target || 0, proposta_tecnica_target || 0,
+        freshservice_dept,
         id
     ], function (err) {
         if (err) {
@@ -125,6 +132,9 @@ app.post('/api/bot/log', (req, res) => {
         res.status(201).json({ success: true, id: this.lastID });
     });
 });
+
+// Integration Route for Freshservice
+app.post('/api/integration/freshservice', processFreshserviceWebhook);
 
 app.get('/api/activities', (req, res) => {
     const query = `

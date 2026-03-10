@@ -19,7 +19,8 @@ export default function Contracts() {
         treinamento_target: 0,
         maps_report_target: 0,
         suporte_target: 0,
-        proposta_tecnica_target: ''
+        proposta_tecnica_target: '',
+        freshservice_dept: ''
     });
     const [submitting, setSubmitting] = useState(false);
 
@@ -55,7 +56,8 @@ export default function Contracts() {
             treinamento_target: contract.treinamento_target,
             maps_report_target: contract.maps_report_target,
             suporte_target: contract.suporte_target,
-            proposta_tecnica_target: contract.proposta_tecnica_target || ''
+            proposta_tecnica_target: contract.proposta_tecnica_target || '',
+            freshservice_dept: contract.freshservice_dept || ''
         });
         setEditingId(contract.id);
         setShowForm(true);
@@ -74,7 +76,8 @@ export default function Contracts() {
             treinamento_target: 0,
             maps_report_target: 0,
             suporte_target: 0,
-            proposta_tecnica_target: ''
+            proposta_tecnica_target: '',
+            freshservice_dept: ''
         });
     };
 
@@ -145,6 +148,19 @@ export default function Contracts() {
                             </div>
                         </div>
 
+                        <div className="form-group" style={{ marginBottom: '24px' }}>
+                            <label>Departamento no Freshservice (Mapeamento)</label>
+                            <input
+                                type="text"
+                                name="freshservice_dept"
+                                value={formData.freshservice_dept}
+                                onChange={handleInputChange}
+                                className="form-control"
+                                placeholder="Ex: Secretaria de Saúde (Nome exato do Freshservice)"
+                            />
+                            <small style={{ color: 'var(--text-muted)' }}>Utilizado para associar tickets automáticos a este contrato.</small>
+                        </div>
+
                         <h4 style={{ marginBottom: '16px', color: 'var(--text-muted)' }}>Metas de Serviços Contratados (Quantidade)</h4>
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '20px', marginBottom: '24px' }}>
@@ -208,6 +224,7 @@ export default function Contracts() {
                                 <th>Maps Report</th>
                                 <th>Suporte</th>
                                 <th>Proposta Técnica</th>
+                                <th>Depto. Freshservice</th>
                                 <th style={{ textAlign: 'center' }}>Ações</th>
                             </tr>
                         </thead>
@@ -228,6 +245,7 @@ export default function Contracts() {
                                             '-'
                                         )}
                                     </td>
+                                    <td>{contract.freshservice_dept || '-'}</td>
                                     <td style={{ textAlign: 'center' }}>
                                         {isEditor && (
                                             <button

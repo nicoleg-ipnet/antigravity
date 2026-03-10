@@ -20,7 +20,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 maps_report_target INTEGER DEFAULT 0,
                 suporte_target INTEGER DEFAULT 0,
                 proposta_tecnica_target INTEGER DEFAULT 0,
-                responsavel_cs TEXT
+                responsavel_cs TEXT,
+                freshservice_dept TEXT
             )`);
 
             // Table: activities
