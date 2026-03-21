@@ -21,7 +21,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 suporte_target INTEGER DEFAULT 0,
                 proposta_tecnica_target INTEGER DEFAULT 0,
                 responsavel_cs TEXT,
-                freshservice_dept TEXT
+                freshservice_dept TEXT,
+                dpt_domains TEXT
             )`);
 
             // Table: activities
@@ -36,6 +37,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 temperatura TEXT,
                 alerta_risco TEXT,
                 observacoes TEXT,
+                source_id TEXT UNIQUE,
                 FOREIGN KEY (contract_id) REFERENCES contracts (id)
             )`);
 

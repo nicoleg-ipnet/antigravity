@@ -5,7 +5,7 @@ const { processFreshserviceWebhook } = require('./freshservice');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 const PORT = process.env.PORT || 3001;
 
@@ -44,19 +44,19 @@ app.post('/api/contracts', checkEditor, (req, res) => {
     const {
         cliente, responsavel_cs, workshop_target, assessment_target,
         treinamento_target, maps_report_target, suporte_target, proposta_tecnica_target,
-        freshservice_dept
+        freshservice_dept, dpt_domains
     } = req.body;
 
     const sql = `INSERT INTO contracts (
         cliente, responsavel_cs, workshop_target, assessment_target, 
         treinamento_target, maps_report_target, suporte_target, proposta_tecnica_target,
-        freshservice_dept
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        freshservice_dept, dpt_domains
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     db.run(sql, [
         cliente, responsavel_cs, workshop_target || 0, assessment_target || 0,
         treinamento_target || 0, maps_report_target || 0, suporte_target || 0, proposta_tecnica_target || 0,
-        freshservice_dept
+        freshservice_dept, dpt_domains
     ], function (err) {
         if (err) {
             return res.status(500).json({ error: err.message });
@@ -70,19 +70,19 @@ app.put('/api/contracts/:id', checkEditor, (req, res) => {
     const {
         cliente, responsavel_cs, workshop_target, assessment_target,
         treinamento_target, maps_report_target, suporte_target, proposta_tecnica_target,
-        freshservice_dept
+        freshservice_dept, dpt_domains
     } = req.body;
 
     const sql = `UPDATE contracts SET 
         cliente = ?, responsavel_cs = ?, workshop_target = ?, assessment_target = ?, 
         treinamento_target = ?, maps_report_target = ?, suporte_target = ?, proposta_tecnica_target = ?,
-        freshservice_dept = ?
+        freshservice_dept = ?, dpt_domains = ?
         WHERE id = ?`;
 
     db.run(sql, [
         cliente, responsavel_cs, workshop_target || 0, assessment_target || 0,
         treinamento_target || 0, maps_report_target || 0, suporte_target || 0, proposta_tecnica_target || 0,
-        freshservice_dept,
+        freshservice_dept, dpt_domains,
         id
     ], function (err) {
         if (err) {
@@ -135,6 +135,9 @@ app.post('/api/bot/log', (req, res) => {
 
 // Integration Route for Freshservice
 app.post('/api/integration/freshservice', processFreshserviceWebhook);
+
+const { processBQImport } = require('./import_bq');
+app.post('/api/import-bq', processBQImport);
 
 app.get('/api/activities', (req, res) => {
     const query = `

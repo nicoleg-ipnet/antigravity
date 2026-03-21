@@ -1,297 +1,517 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { TrendingUp, AlertTriangle, CheckCircle2, Users, Info, BarChart3, Activity, Clock, Star } from 'lucide-react';
 import API_URL from '../config';
 
-const SERVICOS_MAP = {
-    'Workshop': { target: 'workshop_target', realized: 'workshop_realizado', color: '#6366f1' },
-    'Assessment': { target: 'assessment_target', realized: 'assessment_realizado', color: '#10b981' },
-    'Treinamento': { target: 'treinamento_target', realized: 'treinamento_realizado', color: '#f59e0b' },
-    'Maps Report': { target: 'maps_report_target', realized: 'maps_report_realizado', color: '#ec4899' },
-    'Suporte': { target: 'suporte_target', realized: 'suporte_realizado', color: '#8b5cf6' }
+// ─── Paleta IPNET + Google Maps ───────────────────────────────────────────────
+const C = {
+  purple:      '#660099', // Primária
+  purpleLight: '#BD4AFF', // Secundária
+  lime:        '#DAFF71', // Destaque / Hover
+  darkGreen:   '#1A351F', // Textos primários pesados
+  midGreen:    '#315932', // Fundos/bordas neutras sutil
+  success:     '#34A853', // Saudável / Verde Google
+  warning:     '#FBBC04', // Atenção / Amarelo Google
+  danger:      '#EA4335', // Risco / Vermelho Google
+  blue:        '#4285F4', // Workshop / Azul Google
 };
 
+// Mapeamento das Cores dos Serviços para o Donut e Raio-X
+const SVC_COLORS = {
+  'Suporte': C.purple,
+  'Maps Report': C.purpleLight,
+  'Assessment': C.success,
+  'Treinamento': C.warning,
+  'Workshop': C.blue,
+};
+
+// Metas dos contratos (Target fields)
+const TARGET_MAP = {
+  'Suporte': 'suporte_target',
+  'Maps Report': 'maps_report_target',
+  'Assessment': 'assessment_target',
+  'Treinamento': 'treinamento_target',
+  'Workshop': 'workshop_target',
+};
+
+// ─── Helpers de Data ──────────────────────────────────────────────────────────
+function parseDate(isoString) {
+  return isoString ? new Date(isoString) : null;
+}
+
+function daysAgo(date) {
+  if (!date) return null;
+  const diffTime = Math.abs(new Date() - date);
+  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+}
+
+function formatRelativeTime(date) {
+  if (!date) return 'Nunca atendido';
+  const d = daysAgo(date);
+  if (d === 0) return 'Hoje';
+  if (d === 1) return 'Ontem';
+  if (d < 30) return `Há ${d} dias`;
+  const m = Math.floor(d / 30);
+  return `Há ${m} ${m === 1 ? 'mês' : 'meses'}`;
+}
+
 export default function GlobalDashboard() {
-    const [data, setData] = useState([]);
-    const [chartData, setChartData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({
-        totalClients: 0,
-        clientsServed: 0,
-        totalRealized: 0,
-        totalPlanned: 0,
-        avgEngagement: 0,
-        riskAccountCount: 0,
-        alertRanking: []
+  const [contracts, setContracts] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Controle de filtro de período
+  const [period, setPeriod] = useState('30_days');
+
+  useEffect(() => {
+    Promise.all([
+      axios.get(`${API_URL}/contracts`),
+      axios.get(`${API_URL}/activities`)
+    ]).then(([cRes, aRes]) => {
+      setContracts(cRes.data);
+      setActivities(aRes.data);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  // 1. Filtrar Atividades pelo Período Selecionado
+  const filteredActivities = useMemo(() => {
+    const now = new Date();
+    return activities.filter(a => {
+      const pData = parseDate(a.data);
+      if (!pData) return false;
+      
+      if (period === '30_days') {
+        const trintaDiasAtras = new Date();
+        trintaDiasAtras.setDate(now.getDate() - 30);
+        return pData >= trintaDiasAtras;
+      }
+      
+      if (period === 'current_quarter') {
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        const actQuarter = Math.floor(pData.getMonth() / 3);
+        return pData.getFullYear() === now.getFullYear() && actQuarter === currentQuarter;
+      }
+      
+      if (period === 'current_year') {
+        return pData.getFullYear() === now.getFullYear();
+      }
+      
+      return true; // 'all_time' fallback
+    });
+  }, [activities, period]);
+
+  // 2. Cálculos dos KPIs
+  const kpis = useMemo(() => {
+    // Base de Clientes (Total vs com Atividade no período)
+    const totalContratos = contracts.length;
+    const activeClientsSet = new Set(filteredActivities.map(a => a.contract_id));
+    const activeClientsCount = activeClientsSet.size;
+
+    // Engajamento Médio
+    const engajamentoActivities = filteredActivities.filter(a => a.engajamento !== null && a.engajamento !== undefined);
+    const sumEng = engajamentoActivities.reduce((acc, a) => acc + Number(a.engajamento), 0);
+    const avgEng = engajamentoActivities.length > 0 ? (sumEng / engajamentoActivities.length).toFixed(1) : '—';
+
+    // Contas em Risco (Atividades com alerta que não sejam Nulo ou "Nenhum")
+    const riskClientsSet = new Set(filteredActivities
+      .filter(a => a.alerta_risco && !a.alerta_risco.toLowerCase().includes('nenhum'))
+      .map(a => a.contract_id));
+    const riskCount = riskClientsSet.size;
+
+    return { totalContratos, activeClientsCount, avgEng, riskCount };
+  }, [contracts, filteredActivities]);
+
+  // 3. Raio-X & Donut (Metas vs Realizado)
+  const serviceStats = useMemo(() => {
+    const stats = Object.keys(SVC_COLORS).map(serviceName => {
+      // Previsto = Soma dos targets de TODOS os contratos (o contrato é fixo, não depende do período)
+      // Ajuste de regra de negócio: Previsto global é independente de período, ou devemos adaptar? 
+      // Por padrão, volume alvo de contrato costuma ser estático/mensal. Vou usar a soma real do banco.
+      const targetField = TARGET_MAP[serviceName];
+      const sumTarget = contracts.reduce((acc, c) => acc + (Number(c[targetField]) || 0), 0);
+      
+      // Realizado = Soma dos entregáveis com Sucesso APENAS NO PERÍODO
+      const sumRealized = filteredActivities.filter(a => a.tipo_entrega === serviceName && a.status_entrega === 'Sucesso').length;
+      
+      return {
+        name: serviceName,
+        target: sumTarget,
+        realized: sumRealized,
+        pct: sumTarget > 0 ? Math.min(Math.round((sumRealized / sumTarget) * 100), 100) : (sumRealized > 0 ? 100 : 0),
+        color: SVC_COLORS[serviceName]
+      };
+    }).sort((a, b) => b.target - a.target); // Ordenar por maior meta
+
+    // Dados para o Donut (Apenas do que foi entregue)
+    const totalDelivered = stats.reduce((acc, s) => acc + s.realized, 0);
+    
+    // Calcular o gradient dinâmico para o CSS
+    let gradientStops = [];
+    if (totalDelivered > 0) {
+      let cumulativePct = 0;
+      stats.forEach(s => {
+        if (s.realized > 0) {
+          const slicePct = (s.realized / totalDelivered) * 100;
+          gradientStops.push(`${s.color} ${cumulativePct}% ${cumulativePct + slicePct}%`);
+          cumulativePct += slicePct;
+        }
+      });
+    } else {
+      gradientStops.push(`#e5e7eb 0% 100%`); // Cinza se não houver entregas
+    }
+
+    const donutGradient = `conic-gradient(${gradientStops.join(', ')})`;
+
+    return { stats, totalDelivered, donutGradient };
+  }, [contracts, filteredActivities]);
+
+  // Taxa de Entrega Global (Realizado Geral / Target Geral)
+  const globalTarget = useMemo(() => {
+    return serviceStats.stats.reduce((acc, s) => acc + s.target, 0);
+  }, [serviceStats]);
+  
+  const globalDeliveryRate = globalTarget > 0 ? ((serviceStats.totalDelivered / globalTarget) * 100).toFixed(1) : 0;
+
+  // 4. Ranking de Alertas
+  const alertRanking = useMemo(() => {
+    const freqs = {};
+    filteredActivities.forEach(a => {
+      if (a.alerta_risco && !a.alerta_risco.toLowerCase().includes('nenhum')) {
+        freqs[a.alerta_risco] = (freqs[a.alerta_risco] || 0) + 1;
+      }
     });
 
-    useEffect(() => {
-        fetchDashboard();
-    }, []);
+    const totalAlerts = Object.values(freqs).reduce((a, b) => a + b, 0);
+    
+    return Object.entries(freqs)
+      .map(([name, count]) => ({ name, count, pct: Math.round((count / totalAlerts) * 100) }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5); // top 5
+  }, [filteredActivities]);
 
-    const fetchDashboard = async () => {
-        try {
-            const [dashboardRes, statsRes] = await Promise.all([
-                axios.get(`${API_URL}/dashboard`),
-                axios.get(`${API_URL}/dashboard/stats`)
-            ]);
+  // 5. Clientes Sumidos (Fila de Atenção Imediata - Considera base total sem filtro de período)
+  const missingClients = useMemo(() => {
+    const list = contracts.map(c => {
+      // Pegar todas as atividades deste cliente do banco geral
+      const cActs = activities.filter(a => a.contract_id === c.id);
+      
+      // Encontrar a data mais recente
+      let lastDate = null;
+      if (cActs.length > 0) {
+        lastDate = cActs.reduce((latest, a) => {
+          const d = parseDate(a.data);
+          return latest > d ? latest : d;
+        }, parseDate(cActs[0].data));
+      }
 
-            const rawData = dashboardRes.data;
-            const apiStats = statsRes.data;
-
-            setData(rawData);
-            processChartData(rawData);
-            calculateStats(rawData, apiStats);
-        } catch (error) {
-            console.error('Error fetching dashboard:', error);
-        } finally {
-            setLoading(false);
+      const diasSumido = daysAgo(lastDate);
+      
+      // Status visual
+      let statusLevel = 'danger'; // Nunca atendido
+      let statusLabel = '0 Registros';
+      let tagBg = C.danger + '15';
+      let tagColor = C.danger;
+      
+      if (diasSumido !== null) {
+        if (diasSumido >= 90) {
+          statusLevel = 'danger';
+          statusLabel = 'Sumido Crítico';
+        } else if (diasSumido >= 30) {
+          statusLevel = 'warning';
+          statusLabel = 'Atenção (+30 dias)';
+          tagBg = C.warning + '20';
+          tagColor = '#b45309';
+        } else {
+          statusLevel = 'success';
+          statusLabel = 'Ativo (Recente)';
+          tagBg = C.success + '20';
+          tagColor = '#166534';
         }
-    };
+      }
 
-    const processChartData = (rawData) => {
-        const aggregated = Object.keys(SERVICOS_MAP).map(servico => {
-            const fields = SERVICOS_MAP[servico];
-            let previstoTotal = 0;
-            let realizadoTotal = 0;
+      return {
+        ...c,
+        lastDate,
+        diasSumido,
+        actCount: cActs.length,
+        statusLevel,
+        statusLabel,
+        tagBg,
+        tagColor,
+        shortName: c.cliente.replace(/IPNET\s*-\s*GMP\s*-\s*/i, '')
+      };
+    });
 
-            rawData.forEach(client => {
-                const targetValue = client[fields.target];
-                const realizedValue = client[fields.realized];
+    // Ordenar: NULLs primeiro, depois os com maior diasSumido
+    return list.sort((a, b) => {
+      if (a.diasSumido === null && b.diasSumido !== null) return -1;
+      if (b.diasSumido === null && a.diasSumido !== null) return 1;
+      return (b.diasSumido || 0) - (a.diasSumido || 0);
+    });
+  }, [contracts, activities]);
 
-                previstoTotal += (Number(targetValue) || 0);
-                realizadoTotal += (Number(realizedValue) || 0);
-            });
 
-            return {
-                name: servico,
-                Previsto: previstoTotal,
-                Realizado: realizadoTotal
-            };
-        });
-
-        setChartData(aggregated);
-    };
-    const getPieData = () => {
-        return chartData.filter(d => d.Realizado > 0).map(d => ({
-            name: d.name,
-            value: d.Realizado,
-            color: SERVICOS_MAP[d.name].color
-        }));
-    };
-
-    const calculateStats = (rawData, apiStats) => {
-        const totalClients = rawData.length;
-        const clientsServed = rawData.filter(c =>
-            (c.workshop_realizado + c.assessment_realizado + c.treinamento_realizado +
-                c.maps_report_realizado + c.suporte_realizado) > 0
-        ).length;
-
-        const totalRealized = rawData.reduce((acc, c) =>
-            acc + c.workshop_realizado + c.assessment_realizado + c.treinamento_realizado +
-            c.maps_report_realizado + c.suporte_realizado, 0
-        );
-
-        const totalPlanned = rawData.reduce((acc, c) => {
-            return acc + (c.workshop_target || 0) + (c.assessment_target || 0) + (c.treinamento_target || 0) +
-                (c.maps_report_target || 0) + (c.suporte_target || 0);
-        }, 0);
-
-        setStats({
-            totalClients,
-            clientsServed,
-            totalRealized,
-            totalPlanned,
-            avgEngagement: apiStats.avgEngagement,
-            riskAccountCount: apiStats.riskAccountCount,
-            alertRanking: apiStats.alertRanking
-        });
-    };
-
-    const deliveryRate = stats.totalPlanned > 0 ? (stats.totalRealized / stats.totalPlanned) * 100 : 0;
-    const isRateLow = deliveryRate < 40;
-
-    // Top 5 sumidos (sorted by date ascending, nulls first)
-    const topSumidos = [...data]
-        .sort((a, b) => {
-            if (!a.ultima_atividade && !b.ultima_atividade) return 0;
-            if (!a.ultima_atividade) return -1;
-            if (!b.ultima_atividade) return 1;
-            return new Date(a.ultima_atividade) - new Date(b.ultima_atividade);
-        })
-        .slice(0, 5);
-
+  if (loading) {
     return (
-        <div className="global-dashboard">
-            <div className="page-header">
-                <h2>Dashboard Executivo</h2>
-                <p>Visão consolidada de entregas e saúde da base</p>
-            </div>
-
-            <div className="dash-grid" style={{ marginBottom: '32px', gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                <div className="glass-panel alert-card" style={{ borderLeftColor: '#6366f1' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <Users style={{ color: '#6366f1' }} size={24} />
-                        <div>
-                            <h4 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Base de Clientes</h4>
-                            <p style={{ fontSize: '1.5rem', fontWeight: 700 }}>
-                                {stats.totalClients} <span style={{ fontSize: '0.9rem', fontWeight: 400, color: 'var(--text-muted)' }}>/ {stats.clientsServed} atendidos</span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="glass-panel alert-card" style={{ borderLeftColor: isRateLow ? '#ef4444' : '#10b981' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <TrendingUp style={{ color: isRateLow ? '#ef4444' : '#10b981' }} size={24} />
-                        <div>
-                            <h4 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Taxa de Entrega Global</h4>
-                            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: isRateLow ? '#ef4444' : 'inherit' }}>
-                                {deliveryRate.toFixed(1)}%
-                            </p>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                (Realizado / Previsto Total)
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="glass-panel alert-card" style={{ borderLeftColor: stats.riskAccountCount > 0 ? '#ef4444' : '#10b981' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <AlertTriangle style={{ color: stats.riskAccountCount > 0 ? '#ef4444' : '#10b981' }} size={24} />
-                        <div>
-                            <h4 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Contas em Risco</h4>
-                            <p style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.riskAccountCount}</p>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                Clientes com alertas recentes
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="glass-panel alert-card" style={{ borderLeftColor: '#f59e0b' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <Star style={{ color: '#f59e0b' }} size={24} />
-                        <div>
-                            <h4 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Engajamento Médio</h4>
-                            <p style={{ fontSize: '1.5rem', fontWeight: 700 }}>{Number(stats.avgEngagement).toFixed(1)} / 5</p>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                Média de feedback dos clientes
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Row 1: Bar Chart (Full Width) */}
-            <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                    <BarChart3 size={20} className="text-primary" />
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Entregas Contratuais (Global)</h3>
-                </div>
-
-                <div style={{ width: '100%', height: 350 }}>
-                    <ResponsiveContainer>
-                        <BarChart data={chartData} margin={{ top: 10, right: 30, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
-                            <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-                            <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--text-main)' }}
-                                itemStyle={{ fontSize: '12px' }}
-                            />
-                            <Legend verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: '20px' }} />
-                            <Bar dataKey="Previsto" name="Previsto" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={40} />
-                            <Bar dataKey="Realizado" name="Realizado" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            {/* Row 2: Donut Chart + Alert Ranking */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '24px', marginBottom: '32px' }}>
-                <div className="glass-panel" style={{ padding: '24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                        <Activity size={20} style={{ color: 'var(--primary)' }} />
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Distribuição de Entregas</h3>
-                    </div>
-                    <div style={{ height: 300, width: '100%' }}>
-                        <ResponsiveContainer>
-                            <PieChart>
-                                <Pie
-                                    data={getPieData()}
-                                    innerRadius={60}
-                                    outerRadius={90}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {getPieData().map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--text-main)' }}
-                                />
-                                <Legend layout="vertical" align="right" verticalAlign="middle" />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="glass-panel" style={{ padding: '24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                        <AlertTriangle size={20} style={{ color: '#ef4444' }} />
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Ranking de Alertas</h3>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {stats.alertRanking.map((alert, i) => (
-                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
-                                <span style={{ fontSize: '0.9rem' }}>{alert.tipo}</span>
-                                <span className="badge badge-danger" style={{ minWidth: '35px', textAlign: 'center' }}>{alert.total}x</span>
-                            </div>
-                        ))}
-                        {stats.alertRanking.length === 0 && <p className="text-muted" style={{ fontSize: '0.9rem' }}>Nenhum alerta registado.</p>}
-                    </div>
-                </div>
-            </div>
-
-            <div className="glass-panel" style={{ padding: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                    <Clock size={20} style={{ color: '#f59e0b' }} />
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Atenção Imediata: Top 5 Clientes Sumidos</h3>
-                </div>
-                <div className="data-table-container">
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Última Atividade</th>
-                                <th>Status de Risco</th>
-                                <th>Ação Sugerida</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {topSumidos.map((client, i) => (
-                                <tr key={i}>
-                                    <td style={{ fontWeight: 600 }}>{client.cliente}</td>
-                                    <td>{client.ultima_atividade ? new Date(client.ultima_atividade).toLocaleDateString() : 'Sem registros'}</td>
-                                    <td>
-                                        <span className={`badge ${client.ultimo_alerta_risco && client.ultimo_alerta_risco !== 'Nenhum (Tudo certo)' ? 'badge-danger' : 'badge-warning'}`}>
-                                            {client.ultimo_alerta_risco || (client.ultima_atividade ? 'Sem Alerta Recente' : 'Sem contato')}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem', height: 'auto' }}>
-                                            Agendar Reunião
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+        <p style={{ color: C.purple, fontWeight: 'bold' }}>Carregando dados globais...</p>
+      </div>
     );
+  }
+
+  return (
+    <div style={{ padding: '0px', maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      
+      {/* HEADER */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end' }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: C.darkGreen, margin: 0 }}>Dashboard Executivo</h1>
+          <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '4px 0 0' }}>Visão consolidada de entregas, saúde da base e riscos operacionais.</p>
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <select 
+            value={period} 
+            onChange={e => setPeriod(e.target.value)}
+            style={{ 
+              padding: '8px 12px', borderRadius: '8px', border: '1px solid #d1d5db', 
+              fontSize: '0.85rem', fontWeight: 600, color: C.darkGreen, outline: 'none', cursor: 'pointer' 
+            }}
+          >
+            <option value="30_days">Últimos 30 dias</option>
+            <option value="current_quarter">Este Trimestre (QAtual)</option>
+            <option value="current_year">Ano atual ({new Date().getFullYear()})</option>
+            <option value="all_time">Todo o Histórico</option>
+          </select>
+          <button 
+            onClick={() => console.log('Em breve')}
+            style={{ 
+              backgroundColor: C.purple, color: 'white', padding: '8px 16px', borderRadius: '8px', 
+              fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+              transition: 'background-color 0.2s', ':hover': { backgroundColor: C.purpleLight }
+            }}
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Exportar Relatório {/* TODO: Implementar exportação PDF/CSV futuramente */}
+          </button>
+        </div>
+      </div>
+
+      {/* 1. KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+        
+        {/* KPI: Base */}
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.blue }}></div>
+          <p style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{color: C.blue}}>👥</span> Base de Clientes
+          </p>
+          <h3 style={{ fontSize: '2rem', fontWeight: 900, color: C.darkGreen, margin: 0 }}>{kpis.totalContratos}</h3>
+          <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '4px 0 0', fontWeight: 500 }}>
+            {kpis.activeClientsCount} atendidos neste período
+          </p>
+        </div>
+
+        {/* KPI: Taxa Entrega */}
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.purple }}></div>
+          <p style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{color: C.purple}}>📈</span> Taxa de Entrega Global
+          </p>
+          <h3 style={{ fontSize: '2rem', fontWeight: 900, color: C.purple, margin: 0 }}>{globalDeliveryRate}%</h3>
+          <p style={{ fontSize: '0.75rem', margin: '4px 0 0', fontWeight: 500, color: '#6b7280' }}>
+             {serviceStats.totalDelivered} / {globalTarget} entregáveis contratuais
+          </p>
+        </div>
+
+        {/* KPI: Contas Risco */}
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.danger }}></div>
+          <p style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{color: C.danger}}>⚠️</span> Contas em Risco
+          </p>
+          <h3 style={{ fontSize: '2rem', fontWeight: 900, color: C.darkGreen, margin: 0 }}>{kpis.riskCount}</h3>
+          <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '4px 0 0', fontWeight: 500 }}>
+            Clientes com alertas no período
+          </p>
+        </div>
+
+        {/* KPI: Engajamento */}
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.warning }}></div>
+          <p style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{color: C.warning}}>⭐</span> Engajamento Médio
+          </p>
+          <h3 style={{ fontSize: '2rem', fontWeight: 900, color: C.darkGreen, margin: 0, display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+            {kpis.avgEng} <span style={{fontSize:'1rem', color:'#9ca3af'}}>/ 5</span>
+          </h3>
+          <p style={{ fontSize: '0.75rem', color: C.success, margin: '4px 0 0', fontWeight: 600 }}>
+            Média das interações registradas
+          </p>
+        </div>
+      </div>
+
+      {/* 2. GRÁFICOS */}
+      <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+        
+        {/* Raio-X */}
+        <div style={{ flex: '2 1 500px', background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: C.darkGreen, margin: '0 0 2px' }}>Raio-X de Entregas Contratuais</h2>
+          <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '0 0 20px' }}>Comparativo de Realizado vs Previsto Global por Serviço</p>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {serviceStats.stats.filter(s => s.target > 0 || s.realized > 0).map(s => (
+              <div key={s.name}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#374151', minWidth: '120px' }}>{s.name}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: C.darkGreen }}>
+                      {s.realized} <span style={{ fontWeight: 400, color: '#9ca3af' }}>/ {s.target}</span>
+                    </span>
+                    <span style={{ 
+                      fontSize: '0.7rem', fontWeight: 800, color: s.color, background: `${s.color}15`, 
+                      padding: '2px 8px', borderRadius: '4px', minWidth: '45px', textAlign: 'center' 
+                    }}>
+                      {s.pct}%
+                    </span>
+                  </div>
+                </div>
+                <div style={{ width: '100%', height: '10px', background: '#f3f4f6', borderRadius: '99px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${s.pct}%`, background: s.color, borderRadius: '99px' }}></div>
+                </div>
+              </div>
+            ))}
+            {serviceStats.stats.reduce((a, b) => a + b.target, 0) === 0 && (
+               <p style={{ fontSize: '0.85rem', color: '#9ca3af', textAlign: 'center', padding: '20px 0' }}>Sem metas computadas.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Coluna Direita Auxiliar (Alertas e Donut) */}
+        <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          
+          {/* Alertas */}
+          <div style={{ flex: 1, background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: C.darkGreen, margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{color: C.danger}}>⚠️</span> Ranking de Alertas
+            </h2>
+            <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '0 0 16px' }}>Principais motivos de risco mapeados</p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+               {alertRanking.length > 0 ? alertRanking.map(a => (
+                 <div key={a.name}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', alignItems: 'center' }}>
+                     <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }} title={a.name}>
+                       {a.name}
+                     </span>
+                     <span style={{ fontSize: '0.8rem', fontWeight: 800, color: C.darkGreen }}>{a.count}x</span>
+                   </div>
+                   <div style={{ width: '100%', height: '6px', background: '#f3f4f6', borderRadius: '99px', overflow: 'hidden' }}>
+                     <div style={{ height: '100%', width: `${a.pct}%`, background: C.danger, borderRadius: '99px' }}></div>
+                   </div>
+                 </div>
+               )) : (
+                 <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #f3f4f6', textAlign: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>Nenhum alerta crítico no período ativo.</span>
+                 </div>
+               )}
+            </div>
+          </div>
+
+          {/* Donut Chart Esforço */}
+          <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 800, color: C.darkGreen, margin: '0 0 16px' }}>Distribuição do Esforço Realizado</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div 
+                style={{ 
+                  width: '90px', height: '90px', borderRadius: '50%', flexShrink: 0,
+                  background: serviceStats.donutGradient, position: 'relative',
+                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
+                }}
+              >
+                <div style={{ position: 'absolute', top: '25%', left: '25%', right: '25%', bottom: '25%', background: 'white', borderRadius: '50%' }}></div>
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {serviceStats.stats.filter(s => s.realized > 0).map(s => {
+                   const pctDonut = Math.round((s.realized / serviceStats.totalDelivered) * 100);
+                   return (
+                     <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563' }}>
+                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: s.color }}></div>
+                         {s.name}
+                       </span>
+                       <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>{pctDonut}%</span>
+                     </div>
+                   );
+                })}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* 3. FILA DE ATENÇÃO (Clientes Sumidos) */}
+      <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6', background: '#fafafa' }}>
+           <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: C.darkGreen, margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{color: C.warning}}>⚠️</span> Fila de Atenção Imediata: Top Clientes Sumidos
+           </h2>
+           <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>Histórico total. Clientes sem registro de atividade recente no sistema.</p>
+        </div>
+        
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                <th style={{ padding: '12px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cliente</th>
+                <th style={{ padding: '12px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status Contato</th>
+                <th style={{ padding: '12px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Última Atividade</th>
+                <th style={{ padding: '12px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {missingClients.slice(0, 10).map((c, i) => (
+                <tr key={c.id} style={{ borderBottom: i === 9 ? 'none' : '1px solid #f9fafb', transition: 'background-color 0.2s' }}>
+                  <td style={{ padding: '16px 20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: '#f3f4f6', color: '#4b5563', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800 }}>
+                        {c.shortName.slice(0,2).toUpperCase()}
+                      </div>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: C.darkGreen }}>{c.cliente}</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '16px 20px' }}>
+                    <span style={{ background: c.tagBg, color: c.tagColor, padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800 }}>
+                      {c.statusLabel}
+                    </span>
+                  </td>
+                  <td style={{ padding: '16px 20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                       <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151' }}>
+                         {c.lastDate ? c.lastDate.toLocaleDateString('pt-BR') : '—'}
+                       </span>
+                       <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>
+                         {formatRelativeTime(c.lastDate)}
+                       </span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                     <button style={{
+                       padding: '6px 12px', background: 'white', border: '1px solid #d1d5db', borderRadius: '6px',
+                       fontSize: '0.7rem', fontWeight: 800, color: '#374151', cursor: 'pointer'
+                     }}>
+                       {c.actCount === 0 ? 'Agendar Kick-off' : 'Agendar Follow-up'}
+                     </button>
+                  </td>
+                </tr>
+              ))}
+              {missingClients.length === 0 && (
+                <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#9ca3af', fontSize: '0.85rem' }}>Nenhum contrato ativo.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+    </div>
+  );
 }

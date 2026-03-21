@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Controle - Visão Portfólio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#F3F4F6] text-gray-800 min-h-screen p-4 md:p-6 lg:p-8">
+
+    <div class="max-w-[1400px] mx-auto space-y-6">
+
+        <!-- CABEÇALHO DA PÁGINA -->
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Painel de Controle (Portfólio)</h1>
+            <p class="text-sm text-gray-500 mt-1">Monitoramento em tempo real do consumo e saúde dos contratos de Geo.</p>
+        </div>
+
+        <!-- 1. CARDS DE KPI (Resumo Global - Expandido para 4) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- KPI 1: Cobertura -->
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-lg shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cobertura (Ativos)</p>
+                    <p class="text-2xl font-bold text-gray-900">20 <span class="text-sm font-medium text-gray-500">/ 22</span></p>
+                </div>
+            </div>
+
+            <!-- KPI 2: Taxa de Entrega (NOVO) -->
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+                <div class="p-3 bg-green-50 text-green-600 rounded-lg shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Taxa de Entrega Global</p>
+                    <p class="text-2xl font-bold text-gray-900">64%</p>
+                </div>
+            </div>
+
+            <!-- KPI 3: Contratos em Risco -->
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4 border-b-4 border-b-red-500">
+                <div class="p-3 bg-red-50 text-red-600 rounded-lg shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Contratos em Risco</p>
+                    <p class="text-2xl font-bold text-red-600">3 <span class="text-sm font-medium text-gray-500">clientes</span></p>
+                </div>
+            </div>
+
+            <!-- KPI 4: Renovações (NOVO) -->
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4 border-b-4 border-b-yellow-400">
+                <div class="p-3 bg-yellow-50 text-yellow-600 rounded-lg shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Renovações < 90 dias</p>
+                    <p class="text-2xl font-bold text-gray-900">2 <span class="text-sm font-medium text-gray-500">contratos</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. BARRA DE FILTROS -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+            <div class="flex flex-wrap gap-2">
+                <button class="px-4 py-2 text-sm font-bold bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors">Todos (22)</button>
+                <button class="px-4 py-2 text-sm font-bold bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors flex items-center gap-1.5">
+                    Saudáveis (15)
+                </button>
+                <button class="px-4 py-2 text-sm font-bold bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span> Em Risco (3)
+                </button>
+                <button class="px-4 py-2 text-sm font-bold bg-white text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Sem Atendimento (2)</button>
+            </div>
+            
+            <div class="w-full sm:w-72 relative">
+                <svg class="w-4 h-4 absolute left-3 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" placeholder="Buscar cliente..." class="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            </div>
+        </div>
+
+        <!-- 3. GRID DE CLIENTES (Mural com 10 Clientes) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
+            <!-- 1. MOBI LOGISTICA (Risco) -->
+            <div class="bg-white rounded-xl border border-red-200 shadow-sm overflow-hidden flex flex-col relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+                <div class="p-5 flex-grow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 mb-1 truncate">MOBI LOGISTICA</h2>
+                            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Resp: Não Definido</p>
+                        </div>
+                        <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold border border-red-200 shrink-0">Em Risco</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-gray-700">Progresso de Entregas</span>
+                            <span class="text-sm font-bold text-gray-900">2%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2"><div class="bg-red-500 h-2 rounded-full" style="width: 2%"></div></div>
+                    </div>
+                    <div class="bg-red-50/50 border border-red-100 rounded-lg p-2.5 space-y-1.5">
+                        <p class="text-[10px] font-bold text-red-800 uppercase flex items-center gap-1 mb-1">Focos de Atenção</p>
+                        <div class="flex justify-between items-center bg-white p-1.5 rounded border border-red-100">
+                            <span class="text-xs font-semibold text-gray-700">Maps Report</span>
+                            <span class="text-[10px] text-red-600 font-bold">0/12 (< 20%)</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-1.5 rounded border border-red-100">
+                            <span class="text-xs font-semibold text-gray-700">Suporte</span>
+                            <span class="text-[10px] text-red-600 font-bold">1/60 (< 20%)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. SERPRO (Saudável) -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+                <div class="p-5 flex-grow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 mb-1 truncate">SERPRO</h2>
+                            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Resp: Caio Henrique</p>
+                        </div>
+                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold border border-green-200 shrink-0">Saudável</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-gray-700">Progresso de Entregas</span>
+                            <span class="text-sm font-bold text-gray-900">78%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width: 78%"></div></div>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-100 rounded-lg p-2.5 space-y-1.5">
+                        <p class="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1 mb-1">Status (Top 2)</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-semibold text-gray-700">Maps Report</span>
+                            <span class="text-xs font-bold text-green-600">31/12</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-semibold text-gray-700">Suporte</span>
+                            <span class="text-xs font-bold text-gray-800">22/60</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. ITAIPU (Atenção) -->
+            <div class="bg-white rounded-xl border border-orange-200 shadow-sm overflow-hidden flex flex-col relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-orange-500"></div>
+                <div class="p-5 flex-grow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 mb-1 truncate">ITAIPU</h2>
+                            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Resp: Nicole</p>
+                        </div>
+                        <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold border border-orange-200 shrink-0">Atenção</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-gray-700">Progresso de Entregas</span>
+                            <span class="text-sm font-bold text-gray-900">34%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2"><div class="bg-orange-500 h-2 rounded-full" style="width: 34%"></div></div>
+                    </div>
+                    <div class="bg-orange-50/50 border border-orange-100 rounded-lg p-2.5 space-y-1.5">
+                        <p class="text-[10px] font-bold text-orange-800 uppercase flex items-center gap-1 mb-1">Alerta Recente</p>
+                        <div class="flex items-start gap-2 bg-white p-2 rounded border border-orange-100">
+                            <span class="text-[11px] font-medium text-gray-700">Cliente relatou lentidão no consumo da API ontem. TS acionado.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. BAT BRASIL (Risco) -->
+            <div class="bg-white rounded-xl border border-red-200 shadow-sm overflow-hidden flex flex-col relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+                <div class="p-5 flex-grow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 mb-1 truncate">BAT BRASIL</h2>
+                            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Resp: Thiago Alves</p>
+                        </div>
+                        <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold border border-red-200 shrink-0">Em Risco</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-gray-700">Progresso de Entregas</span>
+                            <span class="text-sm font-bold text-gray-900">45%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2"><div class="bg-red-500 h-2 rounded-full" style="width: 45%"></div></div>
+                    </div>
+                    <div class="bg-red-50/50 border border-red-100 rounded-lg p-2.5 space-y-1.5">
+                        <p class="text-[10px] font-bold text-red-800 uppercase flex items-center gap-1 mb-1">Focos de Atenção</p>
+                        <div class="flex justify-between items-center bg-white p-1.5 rounded border border-red-100">
+                            <span class="text-xs font-semibold text-gray-700">Workshop</span>
+                            <span class="text-[10px] text-red-600 font-bold">0/4 (Atrasado)</span>
+                        </div>
+                        <div class="flex items-center gap-1 mt-1">
+                             <span class="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-[9px] font-bold uppercase">Risco de Churn</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. TELECOM TRACK (Sem Atendimento) -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col relative opacity-80">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gray-400"></div>
+                <div class="p-5 flex-grow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 mb-1 truncate">TELECOM TRACK</h2>
+                            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Resp: Nicole</p>
+                        </div>
+                        <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold border border-gray-200 shrink-0">Sem Atend.</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-gray-500">Progresso de Entregas</span>
+                            <span class="text-sm font-bold text-gray-500">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2"></div>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-100 rounded-lg p-3 text-center">
+                        <span class="text-xs text-gray-500 font-medium">Nenhuma atividade registrada no histórico. Agende o Kick-off.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. OMNI BRASIL (Saudável) -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+                <div class="p-5 flex-grow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 mb-1 truncate">OMNI BRASIL</h2>
+                            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Resp: Caio Henrique</p>
+                        </div>
+                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold border border-green-200 shrink-0">Saudável</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-gray-700">Progresso de Entregas</span>
+                            <span class="text-sm font-bold text-gray-900">92%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width: 92%"></div></div>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-100 rounded-lg p-2.5 space-y-1.5">
+                        <p class="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1 mb-1">Status</p>
+                        <span class="text-xs text-gray-600">Engajamento alto (5/5). Renovação quase garantida.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. PRODAM (Atenção) -->
+            <div class="bg-white rounded-xl border border-orange-200 shadow-sm overflow-hidden flex flex-col relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-orange-500"></div>
+                <div class="p-5 flex-grow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 mb-1 truncate">PRODAM</h2>
+                            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Resp: Thiago Alves</p>
+                        </div>
+                        <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold border border-orange-200 shrink-0">Atenção</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-gray-700">Progresso de Entregas</span>
+                            <span class="text-sm font-bold text-gray-900">60%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2"><div class="bg-orange-500 h-2 rounded-full" style="width: 60%"></div></div>
+                    </div>
+                    <div class="bg-orange-50/50 border border-orange-100 rounded-lg p-2.5">
+                        <p class="text-[10px] font-bold text-orange-800 uppercase flex items-center gap-1 mb-1">Focos de Atenção</p>
+                        <div class="flex justify-between items-center bg-white p-1.5 rounded border border-orange-100 mb-1">
+                            <span class="text-xs font-semibold text-gray-700">Treinamento</span>
+                            <span class="text-[10px] text-orange-600 font-bold">0/1 (Pendente)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. SERASA EXPERIAN (Saudável) -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+                <div class="p-5 flex-grow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 mb-1 truncate">SERASA EXPERIAN</h2>
+                            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Resp: Nicole</p>
+                        </div>
+                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold border border-green-200 shrink-0">Saudável</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-gray-700">Progresso de Entregas</span>
+                            <span class="text-sm font-bold text-gray-900">55%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width: 55%"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. OI / V.TAL (Saudável - Renovação Próxima) -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col relative border-b-4 border-b-yellow-400">
+                <div class="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+                <div class="p-5 flex-grow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 mb-1 truncate">OI / V.TAL</h2>
+                            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Resp: Thiago Alves</p>
+                        </div>
+                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold border border-green-200 shrink-0">Saudável</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-gray-700">Progresso de Entregas</span>
+                            <span class="text-sm font-bold text-gray-900">100%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width: 100%"></div></div>
+                    </div>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5 text-center">
+                        <span class="text-xs font-bold text-yellow-800">⚠️ Contrato vence em 30 dias</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 10. BELOTUR (Saudável) -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+                <div class="p-5 flex-grow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 mb-1 truncate">BELOTUR</h2>
+                            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Resp: Caio Henrique</p>
+                        </div>
+                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold border border-green-200 shrink-0">Saudável</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-bold text-gray-700">Progresso de Entregas</span>
+                            <span class="text-sm font-bold text-gray-900">40%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width: 40%"></div></div>
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- Fim do Grid de 10 clientes -->
+    </div>
+
+</body>
+</html>

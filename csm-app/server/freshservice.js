@@ -47,7 +47,7 @@ const processFreshserviceWebhook = (req, res) => {
         else if (itemLower.includes('assessment')) tipo_entrega = 'Assessment';
         else if (itemLower.includes('report')) tipo_entrega = 'Maps Report';
         else if (itemLower.includes('proposta')) tipo_entrega = 'Proposta técnica';
-        else if (itemLower.includes('suporte')) tipo_entrega = 'Suporte';
+        else tipo_entrega = 'Suporte'; // Fallback para Técnica N1/N2, Faturamento, Outros, Sync
 
         // 4. Prepare data
         const data = closed_at ? new Date(closed_at).toISOString() : new Date().toISOString();
