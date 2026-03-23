@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./database');
-const { processFreshserviceWebhook } = require('./freshservice');
+
 
 const app = express();
 app.use(cors());
@@ -133,8 +133,7 @@ app.post('/api/bot/log', (req, res) => {
     });
 });
 
-// Integration Route for Freshservice
-app.post('/api/integration/freshservice', processFreshserviceWebhook);
+
 
 const { processBQImport } = require('./import_bq');
 app.post('/api/import-bq', processBQImport);

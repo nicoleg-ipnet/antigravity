@@ -37,6 +37,8 @@ function computeClientHealth(client) {
   const totalRealized = NUMERIC_SERVICES.reduce((s, sv) => s + (Number(client[sv.realized]) || 0), 0);
   const pct = totalTarget > 0 ? Math.round((totalRealized / totalTarget) * 100) : 0;
 
+  const isCortesiaExclusiva = totalTarget === 0 && totalRealized > 0;
+
   const hasRiskAlert = client.ultimo_alerta_risco &&
     client.ultimo_alerta_risco !== 'Nenhum (Tudo certo)';
 
@@ -56,12 +58,12 @@ function computeClientHealth(client) {
   }
 
   // Sem nenhuma atividade
-  if (totalRealized === 0) return { status: 'sem_atend', pct, focos, totalTarget, totalRealized };
+  if (totalRealized === 0) return { status: 'sem_atend', pct, focos, totalTarget, totalRealized, isCortesiaExclusiva };
   // Tem alerta de risco ou progresso geral < 20%
-  if (hasRiskAlert || pct < 20) return { status: 'risco', pct, focos, totalTarget, totalRealized };
+  if (hasRiskAlert || (!isCortesiaExclusiva && pct < 20)) return { status: 'risco', pct, focos, totalTarget, totalRealized, isCortesiaExclusiva };
   // Algum serviço com < 20% (mas sem alerta direto)
-  if (focos.length > 0) return { status: 'atencao', pct, focos, totalTarget, totalRealized };
-  return { status: 'saudavel', pct, focos, totalTarget, totalRealized };
+  if (focos.length > 0) return { status: 'atencao', pct, focos, totalTarget, totalRealized, isCortesiaExclusiva };
+  return { status: 'saudavel', pct, focos, totalTarget, totalRealized, isCortesiaExclusiva };
 }
 
 const STATUS_CONFIG = {
@@ -73,7 +75,7 @@ const STATUS_CONFIG = {
 
 // ─── Componente do Card Individual ───────────────────────────────────────────
 function ClientCard({ client }) {
-  const { status, pct, focos, totalTarget, totalRealized } = computeClientHealth(client);
+  const { status, pct, focos, totalTarget, totalRealized, isCortesiaExclusiva } = computeClientHealth(client);
   const cfg = STATUS_CONFIG[status];
   // TODO: Substituir por dados reais quando a tabela de contratos for atualizada
   const renewal = RENEWAL_PLACEHOLDER.find(r => r.id === client.contract_id);
@@ -126,12 +128,22 @@ function ClientCard({ client }) {
         <div style={{ marginBottom: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '5px' }}>
             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151' }}>Progresso de Entregas</span>
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>{pct}%</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isCortesiaExclusiva ? C.blue : '#111827' }}>
+              {isCortesiaExclusiva ? (
+                <span style={{ 
+                  fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', 
+                  background: C.blueBg, padding: '2px 6px', borderRadius: '4px', 
+                  border: `1px solid ${C.blue}50` 
+                }}>
+                  Cortesia / Extra
+                </span>
+              ) : `${pct}%`}
+            </span>
           </div>
           <div style={{ width: '100%', background: '#e5e7eb', borderRadius: '99px', height: '7px' }}>
             <div style={{
-              background: cfg.barColor, height: '7px', borderRadius: '99px',
-              width: `${Math.min(pct, 100)}%`,
+              background: isCortesiaExclusiva ? C.blue : cfg.barColor, height: '7px', borderRadius: '99px',
+              width: isCortesiaExclusiva ? '100%' : `${Math.min(pct, 100)}%`,
               transition: 'width 0.4s ease',
             }} />
           </div>

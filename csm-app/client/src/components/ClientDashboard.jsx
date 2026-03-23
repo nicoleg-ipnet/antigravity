@@ -154,29 +154,41 @@ function FeedItem({ activity }) {
 
 // ─── Barra de Progresso de Serviço ───────────────────────────────────────────
 function ServiceBar({ service, realizado }) {
-  const target = service._target;
-  if (!target || target === 0) return null;
-  const pct = Math.min(Math.round((realizado / target) * 100), 100);
-  const isOver = realizado > target;
+  const target = service._target || 0;
+  const isCortesia = target === 0 && realizado > 0;
+  
+  if (target === 0 && realizado === 0) return null;
+
+  const pct = isCortesia ? 100 : Math.min(Math.round((realizado / target) * 100), 100);
+  const isOver = !isCortesia && realizado > target;
 
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: C.darkGreen }}>{service.label}</span>
-        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isOver ? C.success : '#374151' }}>
+        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isCortesia ? '#d97706' : isOver ? C.success : '#374151' }}>
           {realizado}/{target}
           {isOver && <span style={{ fontSize: '0.65rem', color: C.success, marginLeft: '4px' }}>✓ Concluído</span>}
+          {isCortesia && (
+            <span style={{ 
+              fontSize: '0.62rem', fontWeight: 700, color: '#b45309', 
+              background: C.warningBg, padding: '2px 6px', borderRadius: '4px', 
+              marginLeft: '6px', border: `1px solid ${C.warning}60` 
+            }}>
+              Cortesia
+            </span>
+          )}
         </span>
       </div>
       <div style={{ width: '100%', background: '#e5e7eb', borderRadius: '99px', height: '8px', overflow: 'hidden' }}>
         <div style={{
           width: `${pct}%`, height: '8px', borderRadius: '99px',
-          background: isOver ? C.success : service.color,
+          background: isCortesia ? C.warning : isOver ? C.success : service.color,
           transition: 'width 0.5s ease',
         }} />
       </div>
       <p style={{ fontSize: '0.65rem', color: '#9ca3af', marginTop: '3px', textAlign: 'right' }}>
-        {pct}% consumido
+        {isCortesia ? 'Entrega adicional (sem contrato)' : `${pct}% consumido`}
       </p>
     </div>
   );
@@ -191,6 +203,9 @@ export default function ClientDashboard() {
   const [allActivities, setAllActivities] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const [activeFilter, setActiveFilter] = useState('Todos');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Carregar dados em paralelo
   useEffect(() => {
@@ -219,13 +234,46 @@ export default function ClientDashboard() {
     }).finally(() => setLoading(false));
   }, []);
 
+  // Reset filter and page when selectedId changes
+  useEffect(() => {
+    setActiveFilter('Todos');
+    setCurrentPage(1);
+  }, [selectedId]);
+
   const selectedContract = useMemo(() => contracts.find(c => c.id === selectedId) || null, [contracts, selectedId]);
 
   // Atividades filtradas para o cliente selecionado
   const clientActivities = useMemo(() => {
     if (!selectedId) return [];
-    return allActivities.filter(a => a.contract_id === selectedId);
+    return allActivities.filter(a => a.contract_id === selectedId).sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
   }, [allActivities, selectedId]);
+
+  // Average CSAT calculation
+  const averageCsat = useMemo(() => {
+    const rated = clientActivities.filter(a => Number(a.engajamento) >= 1 && Number(a.engajamento) <= 5);
+    if (rated.length === 0) return null;
+    const sum = rated.reduce((acc, curr) => acc + Number(curr.engajamento), 0);
+    return (sum / rated.length).toFixed(1);
+  }, [clientActivities]);
+
+  // Atividades filtradas pela "pílula"
+  const filteredActivities = useMemo(() => {
+    if (activeFilter === 'Todos') return clientActivities;
+    return clientActivities.filter(a => a.tipo_entrega === activeFilter);
+  }, [clientActivities, activeFilter]);
+
+  // Paginação
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredActivities.length / itemsPerPage) || 1;
+  const paginatedActivities = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredActivities.slice(start, start + itemsPerPage);
+  }, [filteredActivities, currentPage, itemsPerPage]);
+
+  const handleFilterChange = (filter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1);
+  };
 
   // Cálculo de consumo: mapa tipo_entrega -> count
   const consumoMap = useMemo(() => {
@@ -241,8 +289,8 @@ export default function ClientDashboard() {
     if (!selectedContract) return [];
     return SERVICES
       .map(s => ({ ...s, _target: Number(selectedContract[s.target]) || 0 }))
-      .filter(s => s._target > 0);
-  }, [selectedContract]);
+      .filter(s => s._target > 0 || (consumoMap[s.tipoEntrega] || 0) > 0);
+  }, [selectedContract, consumoMap]);
 
   // Progresso global
   const progresso = useMemo(() => {
@@ -454,6 +502,12 @@ export default function ClientDashboard() {
             </div>
             {/* Estatísticas rápidas */}
             <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ textAlign: 'center', paddingRight: '12px', borderRight: '1px solid #e5e7eb' }}>
+                <p style={{ fontSize: '1.1rem', fontWeight: 800, color: averageCsat ? C.warning : '#9ca3af', margin: 0 }}>
+                  {averageCsat ? `${averageCsat} ⭐` : 'N/A'}
+                </p>
+                <p style={{ fontSize: '0.6rem', color: '#9ca3af', margin: 0 }}>CSAT Médio</p>
+              </div>
               {[
                 { label: 'Sucesso', val: clientActivities.filter(a => a.status_entrega === 'Sucesso').length, color: C.success },
                 { label: 'No-show', val: clientActivities.filter(a => a.status_entrega === 'No-show').length, color: C.danger },
@@ -467,24 +521,105 @@ export default function ClientDashboard() {
             </div>
           </div>
 
+          {/* Filtros */}
+          <div style={{ padding: '12px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', gap: '8px', overflowX: 'auto', flexShrink: 0 }}>
+            {['Todos', 'Suporte', 'Maps Report', 'Workshop', 'Treinamento', 'Assessment'].map(f => (
+              <button
+                key={f}
+                onClick={() => handleFilterChange(f)}
+                style={{
+                  padding: '6px 12px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
+                  border: activeFilter === f ? `1px solid ${C.purple}` : '1px solid #e5e7eb',
+                  background: activeFilter === f ? C.purple : 'white',
+                  color: activeFilter === f ? 'white' : '#6b7280',
+                  transition: 'all 0.2s', whiteSpace: 'nowrap'
+                }}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
           {/* Lista de itens do feed */}
           <div style={{ overflowY: 'auto', flex: 1, padding: '16px 20px' }}>
-            {clientActivities.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 24px', color: '#9ca3af' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📋</div>
-                <p style={{ fontSize: '0.9rem', fontWeight: 600, color: C.darkGreen, marginBottom: '6px' }}>
-                  Nenhuma atividade registrada
-                </p>
-                <p style={{ fontSize: '0.78rem', lineHeight: 1.5 }}>
-                  As atividades via Freshservice, Bot do Chat e Log Manual aparecerão aqui conforme forem importadas.
-                </p>
-              </div>
+            {filteredActivities.length === 0 ? (
+              (() => {
+                if (activeFilter === 'Todos') {
+                  return (
+                    <div style={{ textAlign: 'center', padding: '40px 24px', color: '#9ca3af' }}>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📋</div>
+                      <p style={{ fontSize: '0.9rem', fontWeight: 600, color: C.darkGreen, marginBottom: '6px' }}>
+                        Nenhuma atividade registrada
+                      </p>
+                      <p style={{ fontSize: '0.78rem', lineHeight: 1.5, maxWidth: '300px', margin: '0 auto' }}>
+                        As atividades via Freshservice, Bot do Chat e Log Manual aparecerão aqui para este cliente.
+                      </p>
+                    </div>
+                  );
+                }
+
+                const svc = SERVICES.find(s => s.tipoEntrega === activeFilter);
+                if (!svc) return null;
+                
+                const hasTarget = selectedContract && Number(selectedContract[svc.target]) > 0;
+
+                if (hasTarget) {
+                  return (
+                    <div style={{ textAlign: 'center', padding: '40px 24px', color: '#9ca3af' }}>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📋</div>
+                      <p style={{ fontSize: '0.9rem', fontWeight: 600, color: C.darkGreen, marginBottom: '6px' }}>
+                        Nenhum registro encontrado
+                      </p>
+                      <p style={{ fontSize: '0.78rem', lineHeight: 1.5, maxWidth: '300px', margin: '0 auto' }}>
+                        Ainda não há atividades de {activeFilter} registradas para este cliente.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ textAlign: 'center', padding: '40px 24px', color: '#9ca3af' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '10px', filter: 'grayscale(0.3)' }}>📦</div>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#d97706', marginBottom: '6px' }}>
+                      Serviço não contratado
+                    </p>
+                    <p style={{ fontSize: '0.78rem', lineHeight: 1.5, maxWidth: '320px', margin: '0 auto' }}>
+                      Este cliente não possui cota de {activeFilter} no pacote atual. Entregas extras aparecerão aqui.
+                    </p>
+                  </div>
+                );
+              })()
             ) : (
-              clientActivities.map((a, i) => (
+              paginatedActivities.map((a, i) => (
                 <FeedItem key={a.id || i} activity={a} />
               ))
             )}
           </div>
+
+          {/* Paginação */}
+          {filteredActivities.length > 0 && (
+            <div style={{ padding: '12px 20px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, background: '#fafafa' }}>
+              <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filteredActivities.length)} de {filteredActivities.length}
+              </span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  style={{ padding: '6px 12px', fontSize: '0.75rem', borderRadius: '6px', border: '1px solid #d1d5db', background: currentPage === 1 ? '#f3f4f6' : 'white', color: currentPage === 1 ? '#9ca3af' : '#374151', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 600 }}
+                >
+                  Anterior
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  style={{ padding: '6px 12px', fontSize: '0.75rem', borderRadius: '6px', border: '1px solid #d1d5db', background: currentPage === totalPages ? '#f3f4f6' : 'white', color: currentPage === totalPages ? '#9ca3af' : '#374151', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontWeight: 600 }}
+                >
+                  Próxima
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

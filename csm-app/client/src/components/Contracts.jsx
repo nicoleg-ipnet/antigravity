@@ -155,7 +155,7 @@ function ContractListItem({ contract, isSelected, onClick }) {
 }
 
 // ─── Painel Direito — Detalhes ────────────────────────────────────────────────
-function ContractDetail({ contract }) {
+function ContractDetail({ contract, onEditClick }) {
   const bqDomains = contract.dpt_domains?.split(',').map(d => d.trim()).filter(Boolean) || [];
   const integrated = isIntegrated(contract);
   const hasCX = !!(contract.responsavel_cs?.trim());
@@ -212,8 +212,8 @@ function ContractDetail({ contract }) {
           </div>
         </div>
 
-        {/* Botão Editar — visual only */}
-        <button style={{
+        {/* Botão Editar */}
+        <button onClick={onEditClick} style={{
           padding: '8px 14px', background: C.darkGreen, color: 'white',
           border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700,
           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
@@ -223,7 +223,7 @@ function ContractDetail({ contract }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
               d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
-          Editar Setup
+          Editar Contrato
         </button>
       </div>
 
@@ -282,6 +282,63 @@ function ContractDetail({ contract }) {
             }}>
               {hasCX ? 'Trocar CX' : 'Atribuir CX'}
             </button>
+          </div>
+        </div>
+
+        {/* Detalhes Comerciais e Estratégicos */}
+        <div>
+          {sectionTitle('Detalhes Comerciais e Estratégicos')}
+          <div style={{
+            background: 'white', padding: '16px', borderRadius: '12px',
+            border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            display: 'flex', flexDirection: 'column', gap: '14px'
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <p style={{ fontSize: '0.7rem', color: '#9ca3af', margin: '0 0 4px', textTransform: 'uppercase', fontWeight: 700 }}>Nº do Contrato</p>
+                <p style={{ fontSize: '0.88rem', fontWeight: 600, color: C.darkGreen, margin: 0 }}>{contract.numero_contrato || '—'}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '0.7rem', color: '#9ca3af', margin: '0 0 4px', textTransform: 'uppercase', fontWeight: 700 }}>Vigência</p>
+                <p style={{ fontSize: '0.88rem', fontWeight: 600, color: C.darkGreen, margin: 0 }}>
+                  {contract.inicio_contrato || '—'} a {contract.vencimento_contrato || '—'}
+                </p>
+              </div>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* Sponsor */}
+              <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+                <p style={{ fontSize: '0.7rem', color: '#9ca3af', margin: '0 0 6px', textTransform: 'uppercase', fontWeight: 700 }}>Contato Sponsor</p>
+                <p style={{ fontSize: '0.85rem', fontWeight: 700, color: C.darkGreen, margin: '0 0 2px' }}>{contract.sponsor_nome || '—'}</p>
+                <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '0 0 4px' }}>{contract.sponsor_cargo || '—'}</p>
+                <p style={{ fontSize: '0.75rem', color: C.blue, margin: 0 }}>{contract.sponsor_email || '—'}</p>
+              </div>
+
+              {/* Técnicos */}
+              <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+                <p style={{ fontSize: '0.7rem', color: '#9ca3af', margin: '0 0 6px', textTransform: 'uppercase', fontWeight: 700 }}>Contatos Técnicos</p>
+                {contract.contatos_tecnicos && contract.contatos_tecnicos.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {contract.contatos_tecnicos.map((ct, idx) => (
+                      <div key={idx} style={{ borderBottom: idx < contract.contatos_tecnicos.length - 1 ? '1px solid #e5e7eb' : 'none', paddingBottom: idx < contract.contatos_tecnicos.length - 1 ? '8px' : '0' }}>
+                        <p style={{ fontSize: '0.8rem', fontWeight: 700, color: C.darkGreen, margin: '0 0 2px' }}>{ct.nome || '—'}</p>
+                        <p style={{ fontSize: '0.75rem', color: C.blue, margin: 0 }}>{ct.email || '—'}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: 0, fontStyle: 'italic' }}>Nenhum registro.</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p style={{ fontSize: '0.7rem', color: '#9ca3af', margin: '0 0 6px', textTransform: 'uppercase', fontWeight: 700 }}>Histórico Sensível</p>
+              <div style={{ fontSize: '0.8rem', color: '#4b5563', lineHeight: 1.5, background: '#fef3c7', padding: '12px', borderRadius: '8px', border: `1px solid #fde68a` }}>
+                {contract.historico_sensivel ? contract.historico_sensivel : <span style={{ color: '#b45309', fontStyle: 'italic' }}>Nenhum histórico registrado.</span>}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -490,6 +547,162 @@ function ContractDetail({ contract }) {
   );
 }
 
+// ─── Modal Edição Contrato ────────────────────────────────────────────────────
+function ContractEditModal({ contract, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    numero_contrato: contract.numero_contrato || '',
+    inicio_contrato: contract.inicio_contrato || '',
+    vencimento_contrato: contract.vencimento_contrato || '',
+    sponsor_nome: contract.sponsor_nome || '',
+    sponsor_cargo: contract.sponsor_cargo || '',
+    sponsor_email: contract.sponsor_email || '',
+    historico_sensivel: contract.historico_sensivel || '',
+    contatos_tecnicos: contract.contatos_tecnicos && contract.contatos_tecnicos.length > 0 
+      ? contract.contatos_tecnicos 
+      : [{ nome: '', email: '' }],
+    dpt_domains: contract.dpt_domains || '',
+    workshop_target: contract.workshop_target || 0,
+    assessment_target: contract.assessment_target || 0,
+    treinamento_target: contract.treinamento_target || 0,
+    maps_report_target: contract.maps_report_target || 0,
+    suporte_target: contract.suporte_target || 0,
+    proposta_tecnica_target: contract.proposta_tecnica_target || '',
+  });
+
+  const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  
+  const handleTechChange = (index, field, value) => {
+    const newTechs = [...formData.contatos_tecnicos];
+    newTechs[index][field] = value;
+    setFormData(prev => ({ ...prev, contatos_tecnicos: newTechs }));
+  };
+  const addTechContact = () => {
+    setFormData(prev => ({ ...prev, contatos_tecnicos: [...prev.contatos_tecnicos, { nome: '', email: '' }] }));
+  };
+  const removeTechContact = (index) => {
+    setFormData(prev => ({ ...prev, contatos_tecnicos: prev.contatos_tecnicos.filter((_, i) => i !== index) }));
+  };
+
+  const handleSubmit = (e) => { e.preventDefault(); onSave(formData); };
+  const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.85rem', marginBottom: '12px', outline: 'none' };
+  const labelStyle = { display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '4px' };
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+      <div style={{ background: 'white', borderRadius: '16px', width: '500px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
+          <h2 style={{ margin: 0, fontSize: '1.1rem', color: C.darkGreen }}>Editar Detalhes do Contrato</h2>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '1.4rem' }}>&times;</button>
+        </div>
+        <form onSubmit={handleSubmit} style={{ padding: '24px' }}>
+          
+          <h3 style={{ fontSize: '0.85rem', color: C.purple, margin: '0 0 12px', borderBottom: `1px solid ${C.purpleBg}`, paddingBottom: '4px' }}>Dados do Contrato</h3>
+          <label style={labelStyle}>Nº do Contrato</label>
+          <input name="numero_contrato" value={formData.numero_contrato} onChange={handleChange} style={inputStyle} placeholder="Ex: CTR-2025-GEO" />
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={labelStyle}>Início</label>
+              <input name="inicio_contrato" value={formData.inicio_contrato} onChange={handleChange} style={inputStyle} placeholder="Jan 2025" />
+            </div>
+            <div>
+              <label style={labelStyle}>Vencimento</label>
+              <input name="vencimento_contrato" value={formData.vencimento_contrato} onChange={handleChange} style={inputStyle} placeholder="Dez 2025" />
+            </div>
+          </div>
+
+          <h3 style={{ fontSize: '0.85rem', color: C.purple, margin: '16px 0 12px', borderBottom: `1px solid ${C.purpleBg}`, paddingBottom: '4px' }}>Domínios do Cliente</h3>
+          <label style={labelStyle}>Domínios Registrados (Google Workspace/BigQuery)</label>
+          <input name="dpt_domains" value={formData.dpt_domains} onChange={handleChange} style={inputStyle} placeholder="Ex: dominio.com.br, outro.com" />
+
+          <h3 style={{ fontSize: '0.85rem', color: C.purple, margin: '16px 0 12px', borderBottom: `1px solid ${C.purpleBg}`, paddingBottom: '4px' }}>Volume Contratado</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
+            <div>
+              <label style={labelStyle}>Suporte</label>
+              <input type="number" min="0" name="suporte_target" value={formData.suporte_target} onChange={handleChange} style={{ ...inputStyle, marginBottom: 0 }} />
+            </div>
+            <div>
+              <label style={labelStyle}>Maps Report</label>
+              <input type="number" min="0" name="maps_report_target" value={formData.maps_report_target} onChange={handleChange} style={{ ...inputStyle, marginBottom: 0 }} />
+            </div>
+            <div>
+              <label style={labelStyle}>Workshop</label>
+              <input type="number" min="0" name="workshop_target" value={formData.workshop_target} onChange={handleChange} style={{ ...inputStyle, marginBottom: 0 }} />
+            </div>
+            <div>
+              <label style={labelStyle}>Assessment</label>
+              <input type="number" min="0" name="assessment_target" value={formData.assessment_target} onChange={handleChange} style={{ ...inputStyle, marginBottom: 0 }} />
+            </div>
+            <div>
+              <label style={labelStyle}>Treinamento</label>
+              <input type="number" min="0" name="treinamento_target" value={formData.treinamento_target} onChange={handleChange} style={{ ...inputStyle, marginBottom: 0 }} />
+            </div>
+          </div>
+          <label style={labelStyle}>Proposta Técnica (Link)</label>
+          <input name="proposta_tecnica_target" value={formData.proposta_tecnica_target} onChange={handleChange} style={inputStyle} placeholder="URL da proposta" />
+
+          <h3 style={{ fontSize: '0.85rem', color: C.purple, margin: '16px 0 12px', borderBottom: `1px solid ${C.purpleBg}`, paddingBottom: '4px' }}>Contato Sponsor</h3>
+          <label style={labelStyle}>Nome</label>
+          <input name="sponsor_nome" value={formData.sponsor_nome} onChange={handleChange} style={inputStyle} placeholder="Ex: João Silva" />
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={labelStyle}>Cargo</label>
+              <input name="sponsor_cargo" value={formData.sponsor_cargo} onChange={handleChange} style={inputStyle} placeholder="Ex: Diretor de TI" />
+            </div>
+            <div>
+              <label style={labelStyle}>Email</label>
+              <input type="email" name="sponsor_email" value={formData.sponsor_email} onChange={handleChange} style={inputStyle} placeholder="joao@empresa.com" />
+            </div>
+          </div>
+
+          <h3 style={{ fontSize: '0.85rem', color: C.purple, margin: '16px 0 12px', borderBottom: `1px solid ${C.purpleBg}`, paddingBottom: '4px' }}>Contatos Técnicos</h3>
+          {formData.contatos_tecnicos.map((tc, idx) => (
+            <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', alignItems: 'end', marginBottom: '8px' }}>
+              <div>
+                {idx === 0 && <label style={labelStyle}>Nome Técnico</label>}
+                <input value={tc.nome} onChange={e => handleTechChange(idx, 'nome', e.target.value)} style={{...inputStyle, marginBottom: 0}} placeholder="Ex: Maria" />
+              </div>
+              <div>
+                {idx === 0 && <label style={labelStyle}>Email Técnico</label>}
+                <input type="email" value={tc.email} onChange={e => handleTechChange(idx, 'email', e.target.value)} style={{...inputStyle, marginBottom: 0}} placeholder="maria@empresa.com" />
+              </div>
+              <button 
+                type="button" 
+                onClick={() => removeTechContact(idx)} 
+                disabled={formData.contatos_tecnicos.length === 1}
+                style={{ 
+                  background: formData.contatos_tecnicos.length === 1 ? '#f3f4f6' : C.dangerBg, 
+                  color: formData.contatos_tecnicos.length === 1 ? '#9ca3af' : C.danger, 
+                  border: 'none', borderRadius: '6px', height: '33px', width: '33px', 
+                  cursor: formData.contatos_tecnicos.length === 1 ? 'not-allowed' : 'pointer', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.2rem', paddingBottom: '2px'
+                }} 
+                title="Remover contato"
+              >
+                &times;
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={addTechContact} style={{ padding: '6px 10px', fontSize: '0.7rem', color: C.purple, background: C.purpleBg, border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, marginTop: '4px' }}>
+            + Adicionar Contato Técnico
+          </button>
+
+          <h3 style={{ fontSize: '0.85rem', color: C.warning, margin: '20px 0 12px', borderBottom: `1px solid ${C.warningBg}`, paddingBottom: '4px' }}>Histórico Sensível</h3>
+          <label style={labelStyle}>Observações / Alinhamentos</label>
+          <textarea name="historico_sensivel" value={formData.historico_sensivel} onChange={handleChange} style={{...inputStyle, minHeight: '80px', resize: 'vertical'}} placeholder="Anote aqui informações estratégicas ou sensíveis da conta..." />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '24px' }}>
+            <button type="button" onClick={onClose} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', fontWeight: 600, cursor: 'pointer', color: '#374151' }}>Cancelar</button>
+            <button type="submit" style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: C.purple, color: 'white', fontWeight: 600, cursor: 'pointer' }}>Salvar Alterações</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Componente Principal ─────────────────────────────────────────────────────
 export default function Contracts() {
   const [contracts, setContracts] = useState([]);
@@ -497,7 +710,16 @@ export default function Contracts() {
   const [selectedId, setSelectedId] = useState(null);
   const [search, setSearch] = useState('');
   const [filterNoCX, setFilterNoCX] = useState(false);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
   const { isEditor } = useAuth();
+
+  const handleSaveEdit = (updatedData) => {
+    // TODO: Integrar com endpoint de atualização no backend
+    setContracts(prev => prev.map(c => 
+      c.id === selectedId ? { ...c, ...updatedData } : c
+    ));
+    setEditModalOpen(false);
+  };
 
   useEffect(() => { fetchContracts(); }, []);
 
@@ -655,12 +877,20 @@ export default function Contracts() {
           overflow: 'hidden',
         }}>
           {selectedContract ? (
-            <ContractDetail contract={selectedContract} />
+            <ContractDetail contract={selectedContract} onEditClick={() => setEditModalOpen(true)} />
           ) : (
             <EmptyState />
           )}
         </div>
       </div>
+
+      {isEditModalOpen && selectedContract && (
+        <ContractEditModal 
+          contract={selectedContract} 
+          onClose={() => setEditModalOpen(false)} 
+          onSave={handleSaveEdit} 
+        />
+      )}
     </div>
   );
 }
