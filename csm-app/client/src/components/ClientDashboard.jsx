@@ -31,11 +31,8 @@ const SERVICES = [
   { tipoEntrega: 'Proposta técnica', target: 'proposta_tecnica_target', label: 'Prop. Técnica',  color: '#c2410c',      bg: '#fff7ed'       },
 ];
 
-// ─── Dados Estáticos (TODO: Integrar com DB futuramente) ──────────────────────
-const MOCK_SPONSOR = { nome: 'João Paulo Ferreira', cargo: 'Diretor de TI', email: 'jp.ferreira@cliente.com.br' };
-const MOCK_CONTRATO = { inicio: 'Jan 2025', fim: 'Dez 2025', numero: 'CTR-2025-GEO' };
-const MOCK_DORES = ['Falta de visibilidade sobre uso da API de Maps', 'Equipe sem treinamento técnico avançado', 'Integração legada com sistemas internos'];
-const MOCK_HANDOVER = 'Cliente migrou de solução concorrente em Nov/2024. Ponto de atenção: sensibilidade na precificação por volume. Negociação conduzida pelo time comercial SP.';
+// ─── Dados Estáticos (TODO: Limpar após validação completa) ───────────────────
+// MOCK Removido: O fluxo agora utiliza informações vitais vindas diretamente do DBM.
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(iso) {
@@ -318,7 +315,18 @@ export default function ClientDashboard() {
   }
 
   return (
-    <div style={{ display: 'flex', gap: '20px', height: '100%', minHeight: '600px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
+      {/* HEADER TÍTULO DA PÁGINA */}
+      <div>
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: C.darkGreen, margin: 0 }}>
+          Visão 360º
+        </h2>
+        <p style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '4px', marginBottom: 0 }}>
+          Análise detalhada e histórico operacional do cliente.
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', gap: '20px', flex: 1, minHeight: '600px' }}>
 
       {/* ═══════════════════════════════════════════════════════════
           SIDEBAR ESQUERDA — RG do Cliente
@@ -385,10 +393,9 @@ export default function ClientDashboard() {
               Dados do Contrato
             </p>
             <div style={{ background: '#fafafa', borderRadius: '8px', padding: '10px 12px', border: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {/* TODO: Integrar com DB futuramente */}
-              <InfoRow label="Nº Contrato" value={MOCK_CONTRATO.numero} />
-              <InfoRow label="Início" value={MOCK_CONTRATO.inicio} />
-              <InfoRow label="Vencimento" value={MOCK_CONTRATO.fim} />
+              <InfoRow label="Nº Contrato" value={selectedContract?.numero_contrato} />
+              <InfoRow label="Início" value={selectedContract?.inicio_contrato} />
+              <InfoRow label="Vencimento" value={selectedContract?.vencimento_contrato} />
               {selectedContract?.proposta_tecnica_target && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.72rem', color: '#6b7280' }}>Proposta</span>
@@ -407,46 +414,80 @@ export default function ClientDashboard() {
             </div>
           </section>
 
-          {/* ─── Contato Sponsor (TODO: Integrar com DB futuramente) */}
+          {/* ─── Contato Sponsor */}
           <section>
             <p style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', margin: '0 0 8px' }}>
               Contato Sponsor
             </p>
-            {/* TODO: Integrar com DB futuramente */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: C.blueBg, padding: '10px 12px', borderRadius: '8px', border: `1px solid ${C.blue}30` }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: C.blue, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0 }}>
-                {MOCK_SPONSOR.nome.split(' ').map(p => p[0]).join('').slice(0, 2)}
+            {selectedContract?.sponsor_nome ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: C.blueBg, padding: '10px 12px', borderRadius: '8px', border: `1px solid ${C.blue}30` }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: C.blue, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0 }}>
+                  {selectedContract.sponsor_nome.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.78rem', fontWeight: 700, color: C.darkGreen, margin: 0 }}>{selectedContract.sponsor_nome}</p>
+                  <p style={{ fontSize: '0.67rem', color: '#6b7280', margin: 0 }}>{selectedContract.sponsor_cargo || 'Cargo não informado'}</p>
+                  <p style={{ fontSize: '0.65rem', color: C.blue, margin: 0 }}>{selectedContract.sponsor_email || 'Email não informado'}</p>
+                </div>
               </div>
-              <div>
-                <p style={{ fontSize: '0.78rem', fontWeight: 700, color: C.darkGreen, margin: 0 }}>{MOCK_SPONSOR.nome}</p>
-                <p style={{ fontSize: '0.67rem', color: '#6b7280', margin: 0 }}>{MOCK_SPONSOR.cargo}</p>
-                <p style={{ fontSize: '0.65rem', color: C.blue, margin: 0 }}>{MOCK_SPONSOR.email}</p>
+            ) : (
+              <div style={{ padding: '10px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: 0, fontStyle: 'italic' }}>Sponsor não cadastrado</p>
               </div>
-            </div>
+            )}
           </section>
 
-          {/* ─── Mapeamento Técnico (TODO: Integrar com DB futuramente) */}
+          {/* ─── Contatos Técnicos */}
+          <section>
+            <p style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', margin: '0 0 8px' }}>
+              Contatos Técnicos
+            </p>
+            {selectedContract?.contatos_tecnicos && (typeof selectedContract.contatos_tecnicos === 'string' ? (() => { try { return JSON.parse(selectedContract.contatos_tecnicos); } catch(e) { return []; } })() : selectedContract.contatos_tecnicos).length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {(typeof selectedContract.contatos_tecnicos === 'string' ? (() => { try { return JSON.parse(selectedContract.contatos_tecnicos); } catch(e) { return []; } })() : selectedContract.contatos_tecnicos).map((ct, idx) => (
+                  <div key={idx} style={{ padding: '8px 10px', background: '#fafafa', borderRadius: '6px', border: '1px solid #f3f4f6' }}>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', margin: '0 0 2px' }}>{ct.nome || 'Nome não informado'}</p>
+                    <p style={{ fontSize: '0.7rem', color: C.blue, margin: 0 }}>{ct.email || 'Email não informado'}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: '10px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: 0, fontStyle: 'italic' }}>Nenhum técnico cadastrado</p>
+              </div>
+            )}
+          </section>
+
+          {/* ─── Mapeamento Técnico */}
           <section>
             <p style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', margin: '0 0 8px' }}>
               Dores / Caso de Uso
             </p>
-            {/* TODO: Integrar com DB futuramente */}
-            <ul style={{ margin: 0, padding: '0 0 0 14px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              {MOCK_DORES.map((d, i) => (
-                <li key={i} style={{ fontSize: '0.73rem', color: '#374151', lineHeight: 1.4 }}>{d}</li>
-              ))}
-            </ul>
+            {selectedContract?.dores_caso_uso?.trim() ? (
+              <div style={{ background: '#f9fafb', borderRadius: '8px', padding: '10px', border: '1px solid #f3f4f6' }}>
+                <p style={{ fontSize: '0.73rem', color: '#374151', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap' }}>
+                  {selectedContract.dores_caso_uso}
+                </p>
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.73rem', color: '#9ca3af', margin: 0, fontStyle: 'italic' }}>Nenhum caso de uso registrado.</p>
+            )}
           </section>
 
-          {/* ─── Handover (TODO: Integrar com DB futuramente) */}
+          {/* ─── Handover */}
           <section>
-            <p style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', margin: '0 0 8px' }}>
-              Histórico Sensível (Handover)
+            <p style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Histórico Sensível (Handover) <span title="Atenção" style={{ color: '#d97706', fontSize: '0.7rem' }}>⚠️</span>
             </p>
-            {/* TODO: Integrar com DB futuramente */}
-            <div style={{ background: C.warningBg, border: `1px solid ${C.warning}50`, borderRadius: '8px', padding: '10px 12px' }}>
-              <p style={{ fontSize: '0.73rem', color: '#78350f', lineHeight: 1.5, margin: 0 }}>{MOCK_HANDOVER}</p>
-            </div>
+            {selectedContract?.historico_sensivel?.trim() ? (
+              <div style={{ background: C.warningBg, border: `1px solid ${C.warning}50`, borderRadius: '8px', padding: '10px 12px' }}>
+                <p style={{ fontSize: '0.73rem', color: '#78350f', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap' }}>
+                  {selectedContract.historico_sensivel}
+                </p>
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.73rem', color: '#9ca3af', margin: 0, fontStyle: 'italic' }}>Nenhum alerta histórico.</p>
+            )}
           </section>
 
         </div>
@@ -622,6 +663,7 @@ export default function ClientDashboard() {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }

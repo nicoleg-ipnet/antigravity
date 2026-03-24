@@ -53,15 +53,11 @@ function computeClientHealth(client) {
     target: Number(client[sv.target]) || 0,
   }));
 
-  if (hasRiskAlert) {
-    focos.push({ label: client.ultimo_alerta_risco, isAlert: true });
-  }
-
   // Sem nenhuma atividade
   if (totalRealized === 0) return { status: 'sem_atend', pct, focos, totalTarget, totalRealized, isCortesiaExclusiva };
-  // Tem alerta de risco ou progresso geral < 20%
-  if (hasRiskAlert || (!isCortesiaExclusiva && pct < 20)) return { status: 'risco', pct, focos, totalTarget, totalRealized, isCortesiaExclusiva };
-  // Algum serviço com < 20% (mas sem alerta direto)
+  // Nova Regra: Risco APENAS se progresso for < 20%
+  if (!isCortesiaExclusiva && pct < 20) return { status: 'risco', pct, focos, totalTarget, totalRealized, isCortesiaExclusiva };
+  // Algum serviço com < 20% (mas progresso geral >= 20%)
   if (focos.length > 0) return { status: 'atencao', pct, focos, totalTarget, totalRealized, isCortesiaExclusiva };
   return { status: 'saudavel', pct, focos, totalTarget, totalRealized, isCortesiaExclusiva };
 }
@@ -93,7 +89,9 @@ function InfoTooltip({ text }) {
           color: 'white', fontSize: '0.75rem', borderRadius: '6px', width: 'max-content',
           maxWidth: '250px', zIndex: 50, boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
           pointerEvents: 'none', lineHeight: 1.4, fontWeight: 500, whiteSpace: 'normal',
-          animation: 'fadeIn 0.2s ease-in-out'
+          animation: 'fadeIn 0.2s ease-in-out',
+          textTransform: 'none',
+          letterSpacing: 'normal'
         }}>
           {text}
           {/* Seta do tooltip */}
@@ -352,7 +350,7 @@ export default function Dashboard() {
       {/* Cabeçalho */}
       <div style={{ marginBottom: '24px' }}>
         <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: C.darkGreen, margin: 0 }}>
-          Painel de Controle
+          Carteira de Clientes
         </h2>
         <p style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '4px' }}>
           Monitoramento em tempo real do consumo e saúde dos contratos de Geo.
@@ -408,7 +406,7 @@ export default function Dashboard() {
           <div>
             <p style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Contratos em Risco
-              <InfoTooltip text="Contagem de clientes distintos que receberam a marcação manual de 'Alerta de Risco' nos registros do Log de Atividades durante este período." />
+              <InfoTooltip text="Progresso de entregas abaixo de 20%" />
             </p>
             <p style={{ fontSize: '1.5rem', fontWeight: 700, color: kpis.emRisco > 0 ? C.danger : '#111827', margin: 0 }}>
               {kpis.emRisco} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#6b7280' }}>clientes</span>
@@ -426,7 +424,7 @@ export default function Dashboard() {
           <div>
             <p style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Engajamento Médio
-              <InfoTooltip text="Média aritmética das notas de CSAT (1 a 5 estrelas) registradas nos atendimentos e reuniões do período." />
+              <InfoTooltip text="Média aritmética das notas de CSAT de todo o histórico." />
             </p>
             <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
               {kpis.engajamentoMedio} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#6b7280' }}>/ 5</span>

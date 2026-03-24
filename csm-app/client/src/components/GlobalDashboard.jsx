@@ -143,19 +143,32 @@ export default function GlobalDashboard() {
     const activeClientsSet = new Set(filteredActivities.map(a => a.contract_id));
     const activeClientsCount = activeClientsSet.size;
 
-    // Engajamento Médio
-    const engajamentoActivities = filteredActivities.filter(a => a.engajamento !== null && a.engajamento !== undefined);
+    // Engajamento Médio (CSAT) - Filtrado pelo período
+    const engajamentoActivities = filteredActivities.filter(a => a.engajamento !== null && a.engajamento !== undefined && a.engajamento !== '');
     const sumEng = engajamentoActivities.reduce((acc, a) => acc + Number(a.engajamento), 0);
-    const avgEng = engajamentoActivities.length > 0 ? (sumEng / engajamentoActivities.length).toFixed(1) : '—';
+    const avgEng = engajamentoActivities.length > 0 ? (sumEng / engajamentoActivities.length).toFixed(1) : 'Sem dados';
 
-    // Contas em Risco (Atividades com alerta que não sejam Nulo ou "Nenhum")
-    const riskClientsSet = new Set(filteredActivities
-      .filter(a => a.alerta_risco && !a.alerta_risco.toLowerCase().includes('nenhum'))
-      .map(a => a.contract_id));
-    const riskCount = riskClientsSet.size;
+    // Contas em Risco (Regra Unificada: Progresso Histórico Total < 20%)
+    const riskCount = contracts.filter(c => {
+      const cActs = activities.filter(a => a.contract_id === c.id && a.status_entrega === 'Sucesso');
+      
+      let totalTarget = 0;
+      let totalRealized = 0;
+      
+      Object.keys(TARGET_MAP).forEach(service => {
+        const target = Number(c[TARGET_MAP[service]]) || 0;
+        const realized = cActs.filter(a => a.tipo_entrega === service).length;
+        totalTarget += target;
+        totalRealized += realized;
+      });
+
+      if (totalTarget === 0) return false;
+      const progress = totalRealized / totalTarget;
+      return progress < 0.2;
+    }).length;
 
     return { totalContratos, activeClientsCount, avgEng, riskCount };
-  }, [contracts, filteredActivities]);
+  }, [contracts, filteredActivities, activities]);
 
   // 3. Raio-X & Donut (Metas vs Realizado)
   const serviceStats = useMemo(() => {
@@ -287,13 +300,29 @@ export default function GlobalDashboard() {
   }, [contracts, activities]);
 
   // Agendamento Google Calendar
-  const handleAgendar = (clienteNome, tipoAcao, emailSponsor) => {
+  const handleAgendar = (contrato, tipoAcao) => {
+    const clienteLimpo = contrato.cliente.replace(/IPNET\s*-\s*GMP\s*-\s*/i, '').trim();
     const titulo = tipoAcao === 'Kick-off'
-      ? `Kick-off: ${clienteNome}`
-      : `Follow-up CSM: ${clienteNome}`;
+      ? `[${clienteLimpo}] Kick-off`
+      : `[${clienteLimpo}] Follow-up`;
     let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(titulo)}`;
-    if (emailSponsor) {
-      url += `&add=${encodeURIComponent(emailSponsor)}`;
+    
+    const emails = [];
+    if (contrato.sponsor_email) emails.push(contrato.sponsor_email);
+    else if (contrato.contato_sponsor_email) emails.push(contrato.contato_sponsor_email);
+
+    if (contrato.contatos_tecnicos) {
+      let tecnicos = contrato.contatos_tecnicos;
+      if (typeof tecnicos === 'string') {
+        try { tecnicos = JSON.parse(tecnicos); } catch(e) { tecnicos = []; }
+      }
+      if (Array.isArray(tecnicos)) {
+        tecnicos.forEach(t => { if (t.email) emails.push(t.email); });
+      }
+    }
+    
+    if (emails.length > 0) {
+      url += `&add=${encodeURIComponent(emails.join(','))}`;
     }
     window.open(url, '_blank');
   };
@@ -313,8 +342,8 @@ export default function GlobalDashboard() {
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: C.darkGreen, margin: 0 }}>Dashboard Executivo</h1>
-          <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '4px 0 0' }}>Visão consolidada de entregas, saúde da base e riscos operacionais.</p>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: C.darkGreen, margin: 0 }}>Visão Global</h1>
+          <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '4px 0 0' }}>Visão consolidada de entregas, saúde da base e riscos operacionais do portfólio.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           <select 
@@ -364,7 +393,7 @@ export default function GlobalDashboard() {
           <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.purple, borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px' }}></div>
           <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', fontWeight: 700, color: '#9ca3af', margin: '0 0 4px' }}>
             <span style={{color: C.purple}}>📈</span> Taxa de Entrega Global
-            <InfoTooltip text="Cálculo: Soma de todos os serviços realizados dividida pela soma de todas as metas contratadas no período selecionado." />
+            <InfoTooltip text="Cálculo: Soma de todos os serviços realizados dividida pela soma de todas as metas contratadas de toda a base." />
           </p>
           <h3 style={{ fontSize: '2rem', fontWeight: 900, color: C.purple, margin: 0 }}>{globalDeliveryRate}%</h3>
           <p style={{ fontSize: '0.75rem', margin: '4px 0 0', fontWeight: 500, color: '#6b7280' }}>
@@ -377,11 +406,11 @@ export default function GlobalDashboard() {
           <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.danger, borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px' }}></div>
           <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', fontWeight: 700, color: '#9ca3af', margin: '0 0 4px' }}>
             <span style={{color: C.danger}}>⚠️</span> Contas em Risco
-            <InfoTooltip text="Contagem de clientes distintos que receberam a marcação manual de 'Alerta de Risco' nos registros do Log de Atividades durante este período." />
+            <InfoTooltip text="Contagem de clientes onde o progresso total de entregas (histórico completo) está abaixo de 20% das metas contratadas." />
           </p>
           <h3 style={{ fontSize: '2rem', fontWeight: 900, color: C.darkGreen, margin: 0 }}>{kpis.riskCount}</h3>
           <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '4px 0 0', fontWeight: 500 }}>
-            Clientes com alertas no período
+            Progresso total abaixo de 20%
           </p>
         </div>
 
@@ -390,13 +419,13 @@ export default function GlobalDashboard() {
           <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.warning, borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px' }}></div>
           <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', fontWeight: 700, color: '#9ca3af', margin: '0 0 4px' }}>
             <span style={{color: C.warning}}>⭐</span> Engajamento Médio
-            <InfoTooltip text="Média aritmética das notas de CSAT (1 a 5 estrelas) registradas nos atendimentos e reuniões do período." />
+            <InfoTooltip text="Média aritmética das notas de CSAT (1 a 5 estrelas) registradas nos atendimentos e reuniões dentro do período selecionado." />
           </p>
           <h3 style={{ fontSize: '2rem', fontWeight: 900, color: C.darkGreen, margin: 0, display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-            {kpis.avgEng} <span style={{fontSize:'1rem', color:'#9ca3af'}}>/ 5</span>
+            {kpis.avgEng} {kpis.avgEng !== 'Sem dados' && <span style={{fontSize:'1rem', color:'#9ca3af'}}>/ 5</span>}
           </h3>
           <p style={{ fontSize: '0.75rem', color: C.success, margin: '4px 0 0', fontWeight: 600 }}>
-            Média das interações registradas
+            {kpis.avgEng === 'Sem dados' ? 'Nenhuma interação no período' : 'Média das interações filtradas'}
           </p>
         </div>
       </div>
@@ -557,7 +586,7 @@ export default function GlobalDashboard() {
                   </td>
                   <td style={{ padding: '16px 20px', textAlign: 'right' }}>
                       <button 
-                        onClick={() => handleAgendar(c.cliente, c.actCount === 0 ? 'Kick-off' : 'Follow-up', c.contato_sponsor_email)}
+                        onClick={() => handleAgendar(c, c.actCount === 0 ? 'Kick-off' : 'Follow-up')}
                         style={{
                           padding: '6px 12px', background: 'white', border: '1px solid #d1d5db', borderRadius: '6px',
                           fontSize: '0.7rem', fontWeight: 800, color: '#374151', cursor: 'pointer'

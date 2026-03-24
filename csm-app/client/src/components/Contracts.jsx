@@ -37,7 +37,7 @@ function getInitials(name = '') {
 }
 
 function isIntegrated(contract) {
-  return !!(contract.dpt_domains?.trim() && contract.freshservice_dept?.trim());
+  return !!(contract.dpt_domains?.trim());
 }
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
@@ -275,11 +275,14 @@ function ContractDetail({ contract, onEditClick }) {
                 </div>
               </div>
             )}
-            <button style={{
-              fontSize: '0.72rem', fontWeight: 700, color: C.blue,
-              background: 'white', padding: '6px 12px', borderRadius: '8px',
-              border: `1px solid ${C.blue}40`, cursor: 'pointer',
-            }}>
+            <button 
+              onClick={onEditClick}
+              style={{
+                fontSize: '0.72rem', fontWeight: 700, color: C.blue,
+                background: 'white', padding: '6px 12px', borderRadius: '8px',
+                border: `1px solid ${C.blue}40`, cursor: 'pointer',
+              }}
+            >
               {hasCX ? 'Trocar CX' : 'Atribuir CX'}
             </button>
           </div>
@@ -330,6 +333,13 @@ function ContractDetail({ contract, onEditClick }) {
                 ) : (
                   <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: 0, fontStyle: 'italic' }}>Nenhum registro.</p>
                 )}
+              </div>
+            </div>
+
+            <div>
+              <p style={{ fontSize: '0.7rem', color: '#9ca3af', margin: '0 0 6px', textTransform: 'uppercase', fontWeight: 700 }}>Dores / Caso de Uso</p>
+              <div style={{ fontSize: '0.8rem', color: '#4b5563', lineHeight: 1.5, background: '#f9fafb', padding: '12px', borderRadius: '8px', border: `1px solid #e5e7eb` }}>
+                {contract.dores_caso_uso ? contract.dores_caso_uso : <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Nenhum registro de dores ou caso de uso.</span>}
               </div>
             </div>
 
@@ -418,73 +428,7 @@ function ContractDetail({ contract, onEditClick }) {
               </button>
             </div>
 
-            {/* Freshservice */}
-            <div style={{
-              padding: '14px 16px', display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between', gap: '12px', background: 'white',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{
-                  width: '38px', height: '38px', borderRadius: '50%',
-                  background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                      d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <p style={{ fontSize: '0.83rem', fontWeight: 700, color: C.darkGreen, margin: 0 }}>
-                      Freshservice (Tickets)
-                    </p>
-                    {contract.freshservice_dept?.trim() ? (
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '3px',
-                        fontSize: '0.6rem', fontWeight: 700, color: '#166534',
-                        background: C.successBg, padding: '2px 7px', borderRadius: '99px',
-                        textTransform: 'uppercase',
-                      }}>
-                        <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: C.success }} />
-                        Ativo
-                      </span>
-                    ) : (
-                      <span style={{
-                        fontSize: '0.6rem', fontWeight: 700, color: '#991b1b',
-                        background: C.dangerBg, padding: '2px 7px', borderRadius: '99px',
-                        textTransform: 'uppercase',
-                      }}>
-                        Não Configurado
-                      </span>
-                    )}
-                  </div>
-                  <p style={{ fontSize: '0.73rem', color: '#6b7280', margin: 0 }}>
-                    Departamento alvo:{' '}
-                    {contract.freshservice_dept?.trim() ? (
-                      <span style={{
-                        fontFamily: 'monospace', fontSize: '0.71rem',
-                        background: '#f3f4f6', padding: '1px 6px',
-                        borderRadius: '4px', border: '1px solid #e5e7eb', color: '#374151',
-                      }}>
-                        {contract.freshservice_dept}
-                      </span>
-                    ) : (
-                      <span style={{ color: C.danger }}>Não definido</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-              <button title="Editar Departamento" style={{
-                padding: '6px', color: '#9ca3af', background: 'transparent',
-                border: '1px solid transparent', borderRadius: '6px', cursor: 'pointer',
-              }}>
-                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </button>
-            </div>
+
           </div>
         </div>
 
@@ -567,6 +511,7 @@ function ContractEditModal({ contract, onClose, onSave, isSaving = false, saveEr
     maps_report_target: contract.maps_report_target || 0,
     suporte_target: contract.suporte_target || 0,
     proposta_tecnica_target: contract.proposta_tecnica_target || '',
+    dores_caso_uso: contract.dores_caso_uso || '',
   });
 
   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -688,6 +633,10 @@ function ContractEditModal({ contract, onClose, onSave, isSaving = false, saveEr
           <button type="button" onClick={addTechContact} style={{ padding: '6px 10px', fontSize: '0.7rem', color: C.purple, background: C.purpleBg, border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, marginTop: '4px' }}>
             + Adicionar Contato Técnico
           </button>
+
+          <h3 style={{ fontSize: '0.85rem', color: C.purple, margin: '20px 0 12px', borderBottom: `1px solid ${C.purpleBg}`, paddingBottom: '4px' }}>Dores / Caso de Uso</h3>
+          <label style={labelStyle}>Expectativas e Cenário de Negócio</label>
+          <textarea name="dores_caso_uso" value={formData.dores_caso_uso} onChange={handleChange} style={{...inputStyle, minHeight: '80px', resize: 'vertical'}} placeholder="O que o cliente espera da IPNET? Qual o cenário atual?" />
 
           <h3 style={{ fontSize: '0.85rem', color: C.warning, margin: '20px 0 12px', borderBottom: `1px solid ${C.warningBg}`, paddingBottom: '4px' }}>Histórico Sensível</h3>
           <label style={labelStyle}>Observações / Alinhamentos</label>
@@ -817,7 +766,7 @@ export default function Contracts() {
       }}>
         <div>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: C.darkGreen, margin: 0 }}>
-            Configuração de Contratos e Metas
+            Gestão de Contratos
           </h2>
           <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '3px 0 0' }}>
             {contracts.length} Contratos •{' '}
@@ -827,11 +776,14 @@ export default function Contracts() {
           </p>
         </div>
         {isEditor && (
-          <button style={{
-            padding: '8px 16px', background: C.purple, color: 'white',
-            border: 'none', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-          }}>
+          <button 
+            onClick={() => { setSelectedId(null); setEditModalOpen(true); }}
+            style={{
+              padding: '8px 16px', background: C.purple, color: 'white',
+              border: 'none', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+            }}
+          >
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
