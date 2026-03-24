@@ -33,6 +33,43 @@ const TARGET_MAP = {
   'Workshop': 'workshop_target',
 };
 
+// ─── Componente Tooltip Informativo ──────────────────────────────────────────
+function InfoTooltip({ text }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div 
+      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <svg width="14" height="14" fill="none" stroke="#9ca3af" viewBox="0 0 24 24" style={{ cursor: 'help', transition: 'stroke 0.2s', ...(show ? { stroke: '#4b5563' } : {}) }}>
+        <circle cx="12" cy="12" r="10" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 16v-4m0-4h.01" />
+      </svg>
+      {show && (
+        <div style={{
+          position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
+          marginBottom: '8px', padding: '8px 12px', background: 'rgba(31, 41, 55, 0.95)',
+          color: 'white', fontSize: '0.75rem', borderRadius: '6px', width: 'max-content',
+          maxWidth: '250px', zIndex: 50, boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          pointerEvents: 'none', lineHeight: 1.4, fontWeight: 500, whiteSpace: 'normal',
+          animation: 'fadeIn 0.2s ease-in-out',
+          textTransform: 'none',
+          letterSpacing: 'normal'
+        }}>
+          {text}
+          {/* Seta do tooltip */}
+          <div style={{
+            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+            borderWidth: '5px', borderStyle: 'solid', borderColor: 'rgba(31, 41, 55, 0.95) transparent transparent transparent'
+          }} />
+        </div>
+      )}
+      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translate(-50%, 5px); } to { opacity: 1; transform: translate(-50%, 0); } }`}</style>
+    </div>
+  );
+}
+
 // ─── Helpers de Data ──────────────────────────────────────────────────────────
 function parseDate(isoString) {
   return isoString ? new Date(isoString) : null;
@@ -249,6 +286,18 @@ export default function GlobalDashboard() {
     });
   }, [contracts, activities]);
 
+  // Agendamento Google Calendar
+  const handleAgendar = (clienteNome, tipoAcao, emailSponsor) => {
+    const titulo = tipoAcao === 'Kick-off'
+      ? `Kick-off: ${clienteNome}`
+      : `Follow-up CSM: ${clienteNome}`;
+    let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(titulo)}`;
+    if (emailSponsor) {
+      url += `&add=${encodeURIComponent(emailSponsor)}`;
+    }
+    window.open(url, '_blank');
+  };
+
 
   if (loading) {
     return (
@@ -299,9 +348,9 @@ export default function GlobalDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
         
         {/* KPI: Base */}
-        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.blue }}></div>
-          <p style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.blue, borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px' }}></div>
+          <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', fontWeight: 700, color: '#9ca3af', margin: '0 0 4px' }}>
             <span style={{color: C.blue}}>👥</span> Base de Clientes
           </p>
           <h3 style={{ fontSize: '2rem', fontWeight: 900, color: C.darkGreen, margin: 0 }}>{kpis.totalContratos}</h3>
@@ -311,10 +360,11 @@ export default function GlobalDashboard() {
         </div>
 
         {/* KPI: Taxa Entrega */}
-        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.purple }}></div>
-          <p style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.purple, borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px' }}></div>
+          <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', fontWeight: 700, color: '#9ca3af', margin: '0 0 4px' }}>
             <span style={{color: C.purple}}>📈</span> Taxa de Entrega Global
+            <InfoTooltip text="Cálculo: Soma de todos os serviços realizados dividida pela soma de todas as metas contratadas no período selecionado." />
           </p>
           <h3 style={{ fontSize: '2rem', fontWeight: 900, color: C.purple, margin: 0 }}>{globalDeliveryRate}%</h3>
           <p style={{ fontSize: '0.75rem', margin: '4px 0 0', fontWeight: 500, color: '#6b7280' }}>
@@ -323,10 +373,11 @@ export default function GlobalDashboard() {
         </div>
 
         {/* KPI: Contas Risco */}
-        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.danger }}></div>
-          <p style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.danger, borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px' }}></div>
+          <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', fontWeight: 700, color: '#9ca3af', margin: '0 0 4px' }}>
             <span style={{color: C.danger}}>⚠️</span> Contas em Risco
+            <InfoTooltip text="Contagem de clientes distintos que receberam a marcação manual de 'Alerta de Risco' nos registros do Log de Atividades durante este período." />
           </p>
           <h3 style={{ fontSize: '2rem', fontWeight: 900, color: C.darkGreen, margin: 0 }}>{kpis.riskCount}</h3>
           <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '4px 0 0', fontWeight: 500 }}>
@@ -335,10 +386,11 @@ export default function GlobalDashboard() {
         </div>
 
         {/* KPI: Engajamento */}
-        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.warning }}></div>
-          <p style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px', position: 'relative', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: C.warning, borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px' }}></div>
+          <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', fontWeight: 700, color: '#9ca3af', margin: '0 0 4px' }}>
             <span style={{color: C.warning}}>⭐</span> Engajamento Médio
+            <InfoTooltip text="Média aritmética das notas de CSAT (1 a 5 estrelas) registradas nos atendimentos e reuniões do período." />
           </p>
           <h3 style={{ fontSize: '2rem', fontWeight: 900, color: C.darkGreen, margin: 0, display: 'flex', alignItems: 'baseline', gap: '4px' }}>
             {kpis.avgEng} <span style={{fontSize:'1rem', color:'#9ca3af'}}>/ 5</span>
@@ -391,7 +443,11 @@ export default function GlobalDashboard() {
           {/* Alertas */}
           <div style={{ flex: 1, background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
             <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: C.darkGreen, margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{color: C.danger}}>⚠️</span> Ranking de Alertas
+              <span style={{color: C.danger}}>⚠️</span> 
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                Ranking de Alertas
+                <InfoTooltip text="Agrupamento dos motivos de risco mais frequentes. Esses dados são alimentados quando o CX registra uma atividade e sinaliza um problema na operação." />
+              </div>
             </h2>
             <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '0 0 16px' }}>Principais motivos de risco mapeados</p>
             
@@ -450,22 +506,27 @@ export default function GlobalDashboard() {
       </div>
 
       {/* 3. FILA DE ATENÇÃO (Clientes Sumidos) */}
-      <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6', background: '#fafafa' }}>
+      <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6', background: '#fafafa', borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}>
            <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: C.darkGreen, margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{color: C.warning}}>⚠️</span> Fila de Atenção Imediata: Top Clientes Sumidos
            </h2>
            <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>Histórico total. Clientes sem registro de atividade recente no sistema.</p>
         </div>
         
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflow: 'visible' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
-                <th style={{ padding: '12px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cliente</th>
-                <th style={{ padding: '12px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status Contato</th>
-                <th style={{ padding: '12px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Última Atividade</th>
-                <th style={{ padding: '12px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Ação</th>
+                <th style={{ padding: '12px 20px', fontSize: '0.75rem', fontWeight: 800, color: '#9ca3af', letterSpacing: '0.05em' }}>Cliente</th>
+                <th style={{ padding: '12px 20px', fontSize: '0.75rem', fontWeight: 800, color: '#9ca3af', letterSpacing: '0.05em' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    Status Contato
+                    <InfoTooltip text="Critérios de inatividade: 'Atenção' = Sem contato há mais de 30 dias. 'Sumido Crítico' = Sem contato há mais de 90 dias. '0 Registros' = Cliente nunca foi atendido." />
+                  </div>
+                </th>
+                <th style={{ padding: '12px 20px', fontSize: '0.75rem', fontWeight: 800, color: '#9ca3af', letterSpacing: '0.05em' }}>Última Atividade</th>
+                <th style={{ padding: '12px 20px', fontSize: '0.75rem', fontWeight: 800, color: '#9ca3af', letterSpacing: '0.05em', textAlign: 'right' }}>Ação</th>
               </tr>
             </thead>
             <tbody>
@@ -495,12 +556,15 @@ export default function GlobalDashboard() {
                     </div>
                   </td>
                   <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                     <button style={{
-                       padding: '6px 12px', background: 'white', border: '1px solid #d1d5db', borderRadius: '6px',
-                       fontSize: '0.7rem', fontWeight: 800, color: '#374151', cursor: 'pointer'
-                     }}>
-                       {c.actCount === 0 ? 'Agendar Kick-off' : 'Agendar Follow-up'}
-                     </button>
+                      <button 
+                        onClick={() => handleAgendar(c.cliente, c.actCount === 0 ? 'Kick-off' : 'Follow-up', c.contato_sponsor_email)}
+                        style={{
+                          padding: '6px 12px', background: 'white', border: '1px solid #d1d5db', borderRadius: '6px',
+                          fontSize: '0.7rem', fontWeight: 800, color: '#374151', cursor: 'pointer'
+                        }}
+                      >
+                        {c.actCount === 0 ? 'Agendar Kick-off' : 'Agendar Follow-up'}
+                      </button>
                   </td>
                 </tr>
               ))}

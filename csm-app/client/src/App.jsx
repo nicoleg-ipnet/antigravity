@@ -43,29 +43,32 @@ function AppContent() {
       <div className="app-container">
         {/* Sidebar */}
         <aside className="sidebar">
-          <div className="sidebar-header">
-            <h1>CSM App</h1>
+          <div className="sidebar-header" style={{ display: 'flex', flexDirection: 'column' }}>
+            <h1 style={{ fontWeight: 900, color: '#660099', fontSize: '2rem', letterSpacing: '-0.02em' }}>P.A.L.I.S</h1>
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.2 }}>
+              Plataforma de Acompanhamento, Logs e Indicadores de Sucesso.
+            </span>
           </div>
 
           <nav>
             <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
               <BarChart3 size={20} />
-              Dashboard
+              Visão Global
             </NavLink>
 
             <NavLink to="/panel" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <LayoutDashboard size={20} />
-              Painel de Controle
+              Carteira de Clientes
             </NavLink>
 
             <NavLink to="/contracts" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <Users size={20} />
-              Contratos
+              Gestão de Contratos
             </NavLink>
 
             <NavLink to="/client-dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <User size={20} />
-              Dashboard p/ Cliente
+              Visão 360º
             </NavLink>
 
             <NavLink to="/activities" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>

@@ -73,6 +73,41 @@ const STATUS_CONFIG = {
   sem_atend: { label: 'Sem Atend.',    barColor: '#9ca3af', badgeBg: '#f3f4f6', badgeText: '#4b5563',   topBar: '#9ca3af', cardBorder: '#e5e7eb', bodyBg: '#f9fafb', bodyBorder: '#e5e7eb' },
 };
 
+// ─── Componente Tooltip Informativo ──────────────────────────────────────────
+function InfoTooltip({ text }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div 
+      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', marginLeft: '6px' }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <svg width="14" height="14" fill="none" stroke="#9ca3af" viewBox="0 0 24 24" style={{ cursor: 'help', transition: 'stroke 0.2s', ...(show ? { stroke: '#4b5563' } : {}) }}>
+        <circle cx="12" cy="12" r="10" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 16v-4m0-4h.01" />
+      </svg>
+      {show && (
+        <div style={{
+          position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
+          marginBottom: '8px', padding: '8px 12px', background: 'rgba(31, 41, 55, 0.95)',
+          color: 'white', fontSize: '0.75rem', borderRadius: '6px', width: 'max-content',
+          maxWidth: '250px', zIndex: 50, boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          pointerEvents: 'none', lineHeight: 1.4, fontWeight: 500, whiteSpace: 'normal',
+          animation: 'fadeIn 0.2s ease-in-out'
+        }}>
+          {text}
+          {/* Seta do tooltip */}
+          <div style={{
+            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+            borderWidth: '5px', borderStyle: 'solid', borderColor: 'rgba(31, 41, 55, 0.95) transparent transparent transparent'
+          }} />
+        </div>
+      )}
+      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translate(-50%, 5px); } to { opacity: 1; transform: translate(-50%, 0); } }`}</style>
+    </div>
+  );
+}
+
 // ─── Componente do Card Individual ───────────────────────────────────────────
 function ClientCard({ client }) {
   const { status, pct, focos, totalTarget, totalRealized, isCortesiaExclusiva } = computeClientHealth(client);
@@ -191,47 +226,7 @@ function ClientCard({ client }) {
           </div>
         </div>
 
-        {/* Focos de Atenção / Alertas (somente quando relevante) */}
-        {status === 'sem_atend' ? (
-          <div style={{
-            background: cfg.bodyBg, border: `1px solid ${cfg.bodyBorder}`,
-            borderRadius: '8px', padding: '10px', textAlign: 'center',
-          }}>
-            <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 500 }}>
-              Nenhuma atividade registrada. Agende o Kick-off.
-            </span>
-          </div>
-        ) : focos.length > 0 ? (
-          <div style={{
-            background: cfg.bodyBg, border: `1px solid ${cfg.bodyBorder}`,
-            borderRadius: '8px', padding: '10px',
-          }}>
-            <p style={{
-              fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase',
-              color: cfg.badgeText, letterSpacing: '0.05em', margin: '0 0 7px',
-            }}>
-              Focos de Atenção
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              {focos.filter(f => f.isAlert).slice(0, 3).map((f, i) => (
-                <div key={i} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  background: 'white', padding: '5px 8px', borderRadius: '5px',
-                  border: `1px solid ${cfg.bodyBorder}`,
-                }}>
-                  <span style={{ fontSize: '0.73rem', fontWeight: 600, color: '#374151' }}>
-                    ⚠️ {f.label}
-                  </span>
-                  {!f.isAlert && (
-                    <span style={{ fontSize: '0.66rem', color: cfg.badgeText, fontWeight: 700 }}>
-                      {f.realized}/{f.target} (&lt; 20%)
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
+
 
 
         {/* TODO: Substituir por dados reais quando a tabela de contratos for atualizada */}
@@ -287,7 +282,10 @@ export default function Dashboard() {
     // TODO: Substituir por dados reais quando a tabela de contratos for atualizada
     const renovacoes = RENEWAL_PLACEHOLDER.length;
 
-    return { totClients, atendidos, deliveryRate, emRisco, renovacoes };
+    // Placeholder para Engajamento Médio
+    const engajamentoMedio = 4.8;
+
+    return { totClients, atendidos, deliveryRate, emRisco, renovacoes, engajamentoMedio };
   }, [data]);
 
   // ─── Filtragem e Busca ───────────────────────────────────────────────────────
@@ -390,7 +388,10 @@ export default function Dashboard() {
             </svg>
           </div>
           <div>
-            <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Taxa de Entrega Global</p>
+            <p style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+              Taxa de Entrega Global
+              <InfoTooltip text="Cálculo: Soma de todos os serviços realizados dividida pela soma de todas as metas contratadas no período selecionado." />
+            </p>
             <p style={{ fontSize: '1.5rem', fontWeight: 700, color: kpis.deliveryRate < 40 ? C.danger : '#111827', margin: 0 }}>
               {kpis.deliveryRate}%
             </p>
@@ -405,24 +406,30 @@ export default function Dashboard() {
             </svg>
           </div>
           <div>
-            <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Contratos em Risco</p>
+            <p style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+              Contratos em Risco
+              <InfoTooltip text="Contagem de clientes distintos que receberam a marcação manual de 'Alerta de Risco' nos registros do Log de Atividades durante este período." />
+            </p>
             <p style={{ fontSize: '1.5rem', fontWeight: 700, color: kpis.emRisco > 0 ? C.danger : '#111827', margin: 0 }}>
               {kpis.emRisco} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#6b7280' }}>clientes</span>
             </p>
           </div>
         </div>
 
-        {/* Renovações — TODO: Substituir por dados reais quando a tabela de contratos for atualizada */}
+        {/* Engajamento Médio */}
         <div style={kpiCard(C.warning)}>
           <div style={kpiIcon('#fffbeb', '#b45309')}>
             <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
           </div>
           <div>
-            <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Renovações &lt; 90 dias</p>
+            <p style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+              Engajamento Médio
+              <InfoTooltip text="Média aritmética das notas de CSAT (1 a 5 estrelas) registradas nos atendimentos e reuniões do período." />
+            </p>
             <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
-              {kpis.renovacoes} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#6b7280' }}>contratos</span>
+              {kpis.engajamentoMedio} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#6b7280' }}>/ 5</span>
             </p>
           </div>
         </div>

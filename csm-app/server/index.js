@@ -67,22 +67,39 @@ app.post('/api/contracts', checkEditor, (req, res) => {
 
 app.put('/api/contracts/:id', checkEditor, (req, res) => {
     const { id } = req.params;
+    console.log(`[PUT /api/contracts/${id}] body:`, JSON.stringify(req.body).slice(0, 300));
+    console.log(`[PUT /api/contracts/${id}] role header:`, req.headers['x-user-role']);
     const {
         cliente, responsavel_cs, workshop_target, assessment_target,
         treinamento_target, maps_report_target, suporte_target, proposta_tecnica_target,
-        freshservice_dept, dpt_domains
+        freshservice_dept, dpt_domains,
+        // Novos campos comerciais
+        numero_contrato, inicio_contrato, vencimento_contrato,
+        sponsor_nome, sponsor_cargo, sponsor_email,
+        contatos_tecnicos, historico_sensivel
     } = req.body;
+
+    // contatos_tecnicos chega como array — serializar para JSON
+    const contatosJson = contatos_tecnicos
+        ? JSON.stringify(contatos_tecnicos)
+        : null;
 
     const sql = `UPDATE contracts SET 
         cliente = ?, responsavel_cs = ?, workshop_target = ?, assessment_target = ?, 
         treinamento_target = ?, maps_report_target = ?, suporte_target = ?, proposta_tecnica_target = ?,
-        freshservice_dept = ?, dpt_domains = ?
+        freshservice_dept = ?, dpt_domains = ?,
+        numero_contrato = ?, inicio_contrato = ?, vencimento_contrato = ?,
+        sponsor_nome = ?, sponsor_cargo = ?, sponsor_email = ?,
+        contatos_tecnicos = ?, historico_sensivel = ?
         WHERE id = ?`;
 
     db.run(sql, [
         cliente, responsavel_cs, workshop_target || 0, assessment_target || 0,
-        treinamento_target || 0, maps_report_target || 0, suporte_target || 0, proposta_tecnica_target || 0,
+        treinamento_target || 0, maps_report_target || 0, suporte_target || 0, proposta_tecnica_target || '',
         freshservice_dept, dpt_domains,
+        numero_contrato || null, inicio_contrato || null, vencimento_contrato || null,
+        sponsor_nome || null, sponsor_cargo || null, sponsor_email || null,
+        contatosJson, historico_sensivel || null,
         id
     ], function (err) {
         if (err) {

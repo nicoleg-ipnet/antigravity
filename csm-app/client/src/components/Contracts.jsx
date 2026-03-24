@@ -548,7 +548,7 @@ function ContractDetail({ contract, onEditClick }) {
 }
 
 // ─── Modal Edição Contrato ────────────────────────────────────────────────────
-function ContractEditModal({ contract, onClose, onSave }) {
+function ContractEditModal({ contract, onClose, onSave, isSaving = false, saveError = '' }) {
   const [formData, setFormData] = useState({
     numero_contrato: contract.numero_contrato || '',
     inicio_contrato: contract.inicio_contrato || '',
@@ -693,9 +693,18 @@ function ContractEditModal({ contract, onClose, onSave }) {
           <label style={labelStyle}>Observações / Alinhamentos</label>
           <textarea name="historico_sensivel" value={formData.historico_sensivel} onChange={handleChange} style={{...inputStyle, minHeight: '80px', resize: 'vertical'}} placeholder="Anote aqui informações estratégicas ou sensíveis da conta..." />
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '24px' }}>
-            <button type="button" onClick={onClose} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', fontWeight: 600, cursor: 'pointer', color: '#374151' }}>Cancelar</button>
-            <button type="submit" style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: C.purple, color: 'white', fontWeight: 600, cursor: 'pointer' }}>Salvar Alterações</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '24px' }}>
+            {saveError && (
+              <p style={{ fontSize: '0.78rem', color: C.danger, background: C.dangerBg, padding: '8px 12px', borderRadius: '6px', margin: 0 }}>
+                ⚠️ {saveError}
+              </p>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button type="button" onClick={onClose} disabled={isSaving} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', fontWeight: 600, cursor: 'pointer', color: '#374151' }}>Cancelar</button>
+              <button type="submit" disabled={isSaving} style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: isSaving ? '#9ca3af' : C.purple, color: 'white', fontWeight: 600, cursor: isSaving ? 'wait' : 'pointer' }}>
+                {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -711,14 +720,39 @@ export default function Contracts() {
   const [search, setSearch] = useState('');
   const [filterNoCX, setFilterNoCX] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
-  const { isEditor } = useAuth();
+  const { isEditor, user } = useAuth();
 
-  const handleSaveEdit = (updatedData) => {
-    // TODO: Integrar com endpoint de atualização no backend
-    setContracts(prev => prev.map(c => 
-      c.id === selectedId ? { ...c, ...updatedData } : c
-    ));
-    setEditModalOpen(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  const handleSaveEdit = async (updatedData) => {
+    if (!selectedId) return;
+    setIsSaving(true);
+    setSaveError('');
+    try {
+      const role = user?.role || 'editor';
+      // Mescla dados existentes do contrato com os campos editados no modal
+      // para garantir que campos obrigatórios (como 'cliente') não sejam enviados como null
+      const existingContract = contracts.find(c => c.id === selectedId) || {};
+      const payload = { ...existingContract, ...updatedData };
+      await axios.put(
+        `${API_URL}/contracts/${selectedId}`,
+        payload,
+        { headers: { 'x-user-role': role } }
+      );
+      console.log('[handleSaveEdit] PUT success');
+      // Atualiza estado local com dados retornados (contatos como array)
+      setContracts(prev => prev.map(c =>
+        c.id === selectedId ? { ...c, ...updatedData } : c
+      ));
+      setEditModalOpen(false);
+    } catch (err) {
+      console.error('[handleSaveEdit] ERROR:', err);
+      const detailedError = err.response?.data?.error || `Falha (Status ${err.response?.status || 'S/Rede'}): ${err.message}`;
+      setSaveError(detailedError);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   useEffect(() => { fetchContracts(); }, []);
@@ -726,8 +760,15 @@ export default function Contracts() {
   const fetchContracts = async () => {
     try {
       const res = await axios.get(`${API_URL}/contracts`);
-      setContracts(res.data);
-      if (res.data.length > 0) setSelectedId(res.data[0].id);
+      // Parsear contatos_tecnicos de JSON para array
+      const parsed = res.data.map(c => ({
+        ...c,
+        contatos_tecnicos: c.contatos_tecnicos
+          ? (typeof c.contatos_tecnicos === 'string' ? JSON.parse(c.contatos_tecnicos) : c.contatos_tecnicos)
+          : []
+      }));
+      setContracts(parsed);
+      if (parsed.length > 0) setSelectedId(parsed[0].id);
     } catch (e) {
       console.error('Erro ao buscar contratos:', e);
     } finally {
@@ -887,8 +928,10 @@ export default function Contracts() {
       {isEditModalOpen && selectedContract && (
         <ContractEditModal 
           contract={selectedContract} 
-          onClose={() => setEditModalOpen(false)} 
-          onSave={handleSaveEdit} 
+          onClose={() => { setEditModalOpen(false); setSaveError(''); }} 
+          onSave={handleSaveEdit}
+          isSaving={isSaving}
+          saveError={saveError}
         />
       )}
     </div>

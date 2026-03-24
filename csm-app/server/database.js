@@ -25,6 +25,23 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 dpt_domains TEXT
             )`);
 
+            // ─── Migração Automática: adiciona colunas comerciais se não existirem
+            const newColumns = [
+                `ALTER TABLE contracts ADD COLUMN numero_contrato TEXT`,
+                `ALTER TABLE contracts ADD COLUMN inicio_contrato TEXT`,
+                `ALTER TABLE contracts ADD COLUMN vencimento_contrato TEXT`,
+                `ALTER TABLE contracts ADD COLUMN sponsor_nome TEXT`,
+                `ALTER TABLE contracts ADD COLUMN sponsor_cargo TEXT`,
+                `ALTER TABLE contracts ADD COLUMN sponsor_email TEXT`,
+                `ALTER TABLE contracts ADD COLUMN contatos_tecnicos TEXT`,
+                `ALTER TABLE contracts ADD COLUMN historico_sensivel TEXT`,
+            ];
+            newColumns.forEach(sql => db.run(sql, err => {
+                // Ignora erro de coluna duplicada (já existe)
+                if (err && !err.message.includes('duplicate column')) {
+                    console.error('Migration error:', err.message);
+                }
+            }));
             // Table: activities
             db.run(`CREATE TABLE IF NOT EXISTS activities (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
