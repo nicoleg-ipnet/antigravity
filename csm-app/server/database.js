@@ -1,7 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const dbPath = path.resolve(__dirname, 'csm.db');
+const dbPath = path.join(__dirname, 'csm.db');
 
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {

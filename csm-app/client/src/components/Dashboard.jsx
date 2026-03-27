@@ -386,10 +386,10 @@ export default function Dashboard() {
             </svg>
           </div>
           <div>
-            <p style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Taxa de Entrega Global
               <InfoTooltip text="Cálculo: Soma de todos os serviços realizados dividida pela soma de todas as metas contratadas no período selecionado." />
-            </p>
+            </div>
             <p style={{ fontSize: '1.5rem', fontWeight: 700, color: kpis.deliveryRate < 40 ? C.danger : '#111827', margin: 0 }}>
               {kpis.deliveryRate}%
             </p>
@@ -404,10 +404,10 @@ export default function Dashboard() {
             </svg>
           </div>
           <div>
-            <p style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Contratos em Risco
               <InfoTooltip text="Progresso de entregas abaixo de 20%" />
-            </p>
+            </div>
             <p style={{ fontSize: '1.5rem', fontWeight: 700, color: kpis.emRisco > 0 ? C.danger : '#111827', margin: 0 }}>
               {kpis.emRisco} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#6b7280' }}>clientes</span>
             </p>
@@ -422,10 +422,10 @@ export default function Dashboard() {
             </svg>
           </div>
           <div>
-            <p style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Engajamento Médio
               <InfoTooltip text="Média aritmética das notas de CSAT de todo o histórico." />
-            </p>
+            </div>
             <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
               {kpis.engajamentoMedio} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#6b7280' }}>/ 5</span>
             </p>
