@@ -253,7 +253,7 @@ function ContractDetail({ contract, onEditClick }) {
                     {contract.responsavel_cs}
                   </p>
                   <p style={{ fontSize: '0.68rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '2px 0 0' }}>
-                    CSM da Conta
+                    PULSO da Conta
                   </p>
                 </div>
               </div>

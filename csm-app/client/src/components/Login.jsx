@@ -81,7 +81,7 @@ export default function Login() {
                                 type="email"
                                 className="form-control"
                                 style={{ paddingLeft: '44px' }}
-                                placeholder="exemplo@csm.com"
+                                placeholder="exemplo@pulso.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -117,8 +117,8 @@ export default function Login() {
 
                 <div style={{ marginTop: '32px', textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     <p>Contas de Teste:</p>
-                    <p style={{ marginTop: '4px' }}>nicole@csm.com / admin123 (Editor)</p>
-                    <p>viewer@csm.com / view123 (Viewer)</p>
+                    <p style={{ marginTop: '4px' }}>nicole@pulso.com / admin123 (Editor)</p>
+                    <p>viewer@pulso.com / view123 (Viewer)</p>
                 </div>
             </div>
         </div>

@@ -44,9 +44,9 @@ function AppContent() {
         {/* Sidebar */}
         <aside className="sidebar">
           <div className="sidebar-header" style={{ display: 'flex', flexDirection: 'column' }}>
-            <h1 style={{ fontWeight: 900, color: '#660099', fontSize: '2rem', letterSpacing: '-0.02em' }}>P.A.L.I.S</h1>
+            <h1 style={{ fontWeight: 900, color: '#660099', fontSize: '2rem', letterSpacing: '-0.02em' }}>PULSO</h1>
             <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.2 }}>
-              Plataforma de Acompanhamento, Logs e Indicadores de Sucesso.
+              Plataforma de Unificação, Logs e Sucesso Operacional.
             </span>
           </div>
 
