@@ -1,0 +1,4 @@
+node_modules/
+.env
+csm.db
+.DS_Store
